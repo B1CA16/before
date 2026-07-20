@@ -66,7 +66,7 @@ later with zero changes to the rest of the system.
 | Stage | Scorer | Label source | What we learn |
 |-------|--------|--------------|---------------|
 | **v0** | `HeuristicScorer` (transparent rules) | none - it *is* the rule | full pipeline, EDA, domain, a **baseline** |
-| **v1** | `MLScorer` (gradient-boosted trees) | **labels we own**: user session ratings + our own expert annotation of *archived* conditions | real supervised ML, beating a baseline, evaluation, XAI |
+| **v1** | `MLScorer` (gradient-boosted trees) | **labels we own**: primarily user session ratings (rate a surfed session good-or-not, needs no forecasting expertise) + measured-condition sanity checks | real supervised ML, beating a baseline, evaluation, XAI |
 | **v2** *(future)* | `MLScorer` + personalization | per-user rating history | recommenders, cold-start, personalization |
 
 **Two key properties of the ladder:**
@@ -75,6 +75,12 @@ later with zero changes to the rest of the system.
   you only know that because the heuristic exists.)
 - The cold-start problem is solved *by* v0: the heuristic launches the product and the UI where
   users rate sessions, which generates the labels v1 needs. The system bootstraps its own data.
+
+**Revision (2026-07-20):** the project owner is *not* a surf expert, so we do NOT rely on expert
+annotation for labels. v1 leans primarily on **user session ratings** (rating a session you
+surfed as good-or-not needs no forecasting expertise) plus **measured-condition sanity checks**.
+This also pushes the whole project to be more purely data-driven, which is a feature, not a bug.
+The full v1 label design is finalized at M7.
 
 ---
 
@@ -109,8 +115,8 @@ Features split into two classes that behave very differently:
 | Beach/shore orientation (°) | **Computed** from OpenStreetMap coastline geometry (shore-normal azimuth) | ✅ |
 | Bathymetry / bottom slope | **GEBCO** (global) / **EMODnet** (EU) open datasets | ✅ |
 | Wind shelter / exposure | **Computed** from coastline + terrain elevation (later, advanced) | ✅ (eventually) |
-| Spot list + coordinates | **OpenStreetMap** (`sport=surfing`) + **Wikidata** | ✅ (mostly) |
-| Break type, wave character | **Curated** - hand-annotated (bounded because region is small) | ❌ |
+| Spot list + coordinates | **OpenStreetMap** (Overpass, `sport=surfing`) + **Wikidata**, extracted automatically; manual correction supported | ✅ (mostly) |
+| Break type, wave character | **Best-effort** from OSM/Wikidata tags; else `NULL`/unknown. Not required by v0, which relies on computed features. Manual correction supported. | partial |
 
 ### Dynamic conditions (change hourly - scraped live)
 Swell height / period / direction; wind speed / direction; tide state; water & air temperature.
@@ -133,7 +139,8 @@ Derived geometric features are gold because they **scale to beaches we've never 
 - **Archive / reanalysis conditions** (training time - reconstruct the past): **Open-Meteo
   historical API (ERA5-backed)** and/or **Copernicus Marine Service** hindcasts.
 - **Bathymetry:** GEBCO / EMODnet.
-- **Spot locations & metadata:** OpenStreetMap, Wikidata.
+- **Spot locations & metadata:** OpenStreetMap (Overpass API) + Wikidata, extracted automatically;
+  individual spots can be corrected by hand in a versioned seed.
 - **Map tiles:** OpenStreetMap via MapLibre / Leaflet (no paid API key).
 
 > **Forecast ≠ training data.** Forecasts describe the future and are used at *serving* time.
@@ -151,7 +158,7 @@ A **pipeline**: each stage transforms and hands off.
    ┌─────────────────────────────────────────────────────────────┐
    │            STATIC (built once, rarely changes)                │
    │  Spot registry: coords, break type, orientation°, bathymetry  │
-   │  ← OpenStreetMap / Wikidata / GEBCO + hand-annotation          │
+   │  ← OpenStreetMap / Wikidata / GEBCO + automated extraction     │
    └───────────────────────────────┬─────────────────────────────┘
                                     │
    ┌────────────────┐   daily   ┌───▼──────────┐   ┌──────────────────┐
@@ -264,7 +271,7 @@ Milestones 0-6 deliver **v0** (a usable product with an honest heuristic brain);
 | # | Milestone | Core learning | Difficulty |
 |---|---|---|---|
 | **0** | Foundations (monorepo, `uv`, `ruff`, pre-commit, Supabase, secrets, ADRs) | Reproducible env, Git workflow, tooling | 🟢 Easy |
-| **1** | Spot registry (static): schema, source coords, compute orientation, bathymetry, annotate | Data modeling, PostGIS, static features | 🟡 Medium |
+| **1** | Spot registry (static): SQL schema (Supabase CLI), auto-extract spots (OSM/Wikidata), compute orientation; break type best-effort; bathymetry deferred | Data modeling, PostGIS, geospatial, migrations | 🟡 Medium |
 | **2** | Ingestion pipeline (dynamic): daily scraper → Postgres, archive backfill, GH Actions cron | Data engineering, scheduling, idempotency | 🟡 Medium |
 | **3** | EDA + feature engineering: explore data, build shared feature module | EDA, feature engineering, interactions | 🟡 Medium |
 | **4** | Heuristic scorer v0 + eval harness: `Scorer` interface, `HeuristicScorer`, baseline | Baselines, abstraction, evaluation | 🟡 Medium |
@@ -284,8 +291,8 @@ Milestones 0-6 deliver **v0** (a usable product with an honest heuristic brain);
 ## 12. Success criteria
 
 - **v0:** a deployed, usable web app showing a BeFORE score for each spot on the target coast,
-  driven by a transparent heuristic, with session logging collecting labels - and *you* (the
-  local expert) judge its scores as "roughly sensible."
+  driven by a transparent heuristic, with session logging collecting labels. Sanity is judged by
+  whether scores agree with measured conditions and general surf logic, not by expert intuition.
 - **v1:** an `MLScorer` that **measurably beats the `HeuristicScorer` baseline** on held-out data,
   with an evaluation report and explainability (feature importance / SHAP).
 - **Throughout:** clean, tested, documented code; reproducible environment; decisions recorded
@@ -296,7 +303,14 @@ Milestones 0-6 deliver **v0** (a usable product with an honest heuristic brain);
 ## 13. Deferred decisions (revisited later, deliberately)
 
 - Regression vs. ordinal classification for the score → **M7**.
-- Exact spot list (~20-50) → **M1**.
+- Exact spot list (~20-50, auto-extracted from OSM/Wikidata, manually correctable) → **M1**.
+- Bathymetry sourcing (GEBCO/EMODnet) → deferred until the heuristic needs it (post-M1).
+- Final v1 label design (session ratings vs any expert/annotation signal) → **M7**.
 - Exact API deploy host (Vercel functions vs HF Spaces vs Render) → **M5**.
 - Experiment-tracking tool (MLflow vs W&B) → **M8**.
 - Multi-sport module restructuring → when sport #2 is scheduled.
+
+## Decisions made after initial approval (see ADRs)
+
+- Schema management: Supabase CLI + hand-written SQL migrations (ADR-0002).
+- Spot sourcing: automated from OSM/Wikidata, no reliance on expert annotation (ADR-0003).
