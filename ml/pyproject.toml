@@ -3,7 +3,9 @@ name = "before-surf"
 version = "0.0.0"
 description = "beFORE Surf Intelligence: data, features, and scoring."
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+    "pydantic-settings>=2.14.2",
+]
 
 [build-system]
 requires = ["hatchling"]
