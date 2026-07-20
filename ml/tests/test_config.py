@@ -17,3 +17,9 @@ def test_env_override(monkeypatch):
 
 def test_get_settings_returns_settings():
     assert isinstance(get_settings(), Settings)
+
+
+def test_overpass_url_has_default(monkeypatch):
+    monkeypatch.delenv("OVERPASS_URL", raising=False)
+    settings = Settings(_env_file=None)
+    assert settings.overpass_url.startswith("https://")
