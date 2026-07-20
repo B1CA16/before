@@ -310,7 +310,7 @@ repos:
       - id: check-added-large-files
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.6.9
+    rev: v0.15.22
     hooks:
       - id: ruff
         args: [--fix]
@@ -322,10 +322,10 @@ repos:
         name: no em-dashes
         description: Fail if any staged text file contains an em-dash.
         language: pygrep
-        entry: '\u2014'
+        entry: '\xe2\x80\x94'
         types: [text]
 ```
-Note: `entry` is single-quoted, so YAML does not process the backslash escape; pre-commit receives the six-character string `\u2014`, which Python's regex engine matches as the em-dash codepoint (U+2014). Writing it as an escape keeps this config file (and this plan) free of a literal em-dash, so the guard never flags its own definition.
+Note: `entry` is single-quoted so YAML passes the escape text through unchanged. pre-commit's pygrep compiles the pattern as bytes, and byte regexes do not support \u escapes, so we match the em-dash by its UTF-8 byte sequence `\xe2\x80\x94`. That string contains no literal em-dash, so the guard never flags its own definition.
 
 - [ ] **Step 2: Install the git hook**
 
