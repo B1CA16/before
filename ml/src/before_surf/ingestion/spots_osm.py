@@ -3,11 +3,28 @@
 import re
 import unicodedata
 
-import httpx
-
 from before_surf.ingestion.models import Spot
+from before_surf.ingestion.overpass import run_query
 
 BBox = tuple[float, float, float, float]  # south, west, north, east
+
+# OSM elements tagged as businesses (surf schools, shops, rentals) are not spots.
+_BUSINESS_KEYS = ("shop", "office", "craft", "amenity")
+_BUSINESS_WORDS = (
+    "school",
+    "escola",
+    "shop",
+    "store",
+    "loja",
+    "rental",
+    "aluguer",
+    "lessons",
+    "academy",
+    "academia",
+    "hostel",
+    "hotel",
+    "surfcamp",
+)
 
 
 def slugify(name: str) -> str:
@@ -32,12 +49,21 @@ def _query(bbox: BBox) -> str:
     )
 
 
+def _is_business(tags: dict, name: str) -> bool:
+    if any(key in tags for key in _BUSINESS_KEYS):
+        return True
+    lowered = name.lower()
+    return any(word in lowered for word in _BUSINESS_WORDS)
+
+
 def parse_overpass(payload: dict, region: str) -> list[Spot]:
     spots: list[Spot] = []
     for el in payload.get("elements", []):
         tags = el.get("tags", {})
         name = tags.get("name")
         if not name:
+            continue
+        if _is_business(tags, name):
             continue
         if el["type"] == "node":
             lat, lon = el.get("lat"), el.get("lon")
@@ -70,6 +96,5 @@ def dedupe(spots: list[Spot]) -> list[Spot]:
 
 
 def fetch_spots(bbox: BBox, region: str, url: str) -> list[Spot]:
-    response = httpx.post(url, data={"data": _query(bbox)}, timeout=90.0)
-    response.raise_for_status()
-    return dedupe(parse_overpass(response.json(), region))
+    payload = run_query(_query(bbox), url)
+    return dedupe(parse_overpass(payload, region))

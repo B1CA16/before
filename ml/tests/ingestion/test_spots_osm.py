@@ -40,3 +40,40 @@ def test_dedupe_keeps_first():
     a = Spot(slug="x", name="X", region="R", latitude=1.0, longitude=2.0)
     b = Spot(slug="x", name="X dup", region="R", latitude=1.1, longitude=2.1)
     assert dedupe([a, b]) == [a]
+
+
+def test_parse_overpass_drops_businesses():
+    payload = {
+        "elements": [
+            {
+                "type": "node",
+                "id": 1,
+                "lat": 38.9,
+                "lon": -9.4,
+                "tags": {"name": "Praia dos Coxos", "natural": "beach"},
+            },
+            {
+                "type": "node",
+                "id": 2,
+                "lat": 38.9,
+                "lon": -9.4,
+                "tags": {"name": "Moana Surf School", "sport": "surfing"},
+            },
+            {
+                "type": "node",
+                "id": 3,
+                "lat": 38.9,
+                "lon": -9.4,
+                "tags": {"name": "The Collective SurfShop", "shop": "sports", "sport": "surfing"},
+            },
+            {
+                "type": "node",
+                "id": 4,
+                "lat": 38.9,
+                "lon": -9.4,
+                "tags": {"name": "Blue Ocean Surf School & Rentals", "sport": "surfing"},
+            },
+        ]
+    }
+    spots = parse_overpass(payload, region="Lisbon")
+    assert {s.slug for s in spots} == {"praia-dos-coxos"}

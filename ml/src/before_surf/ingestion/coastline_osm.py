@@ -1,6 +1,6 @@
 """Fetch OSM coastline polylines within a bounding box (Overpass)."""
 
-import httpx
+from before_surf.ingestion.overpass import run_query
 
 BBox = tuple[float, float, float, float]
 
@@ -21,6 +21,5 @@ def parse_coastline(payload: dict) -> list[list[tuple[float, float]]]:
 
 
 def fetch_coastline(bbox: BBox, url: str) -> list[list[tuple[float, float]]]:
-    response = httpx.post(url, data={"data": _query(bbox)}, timeout=120.0)
-    response.raise_for_status()
-    return parse_coastline(response.json())
+    payload = run_query(_query(bbox), url)
+    return parse_coastline(payload)
