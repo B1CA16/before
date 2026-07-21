@@ -12,6 +12,8 @@ class Settings(BaseSettings):
 
     app_env: str = "development"
     database_url: str | None = None
+    supabase_project_ref: str | None = None
+    overpass_url: str = "https://overpass-api.de/api/interpreter"
 
 
 def get_settings() -> Settings:
