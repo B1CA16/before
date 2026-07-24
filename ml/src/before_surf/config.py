@@ -14,6 +14,9 @@ class Settings(BaseSettings):
     database_url: str | None = None
     supabase_project_ref: str | None = None
     overpass_url: str = "https://overpass-api.de/api/interpreter"
+    marine_url: str = "https://marine-api.open-meteo.com/v1/marine"
+    weather_forecast_url: str = "https://api.open-meteo.com/v1/forecast"
+    weather_archive_url: str = "https://archive-api.open-meteo.com/v1/archive"
 
 
 def get_settings() -> Settings:
