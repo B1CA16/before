@@ -72,15 +72,28 @@ def _get(url: str, params: dict, timeout: float = 60.0, attempts: int = 3) -> di
     raise RuntimeError(f"Open-Meteo request failed: {url}") from last_error
 
 
+def normalize_locations(payload: dict | list) -> list[dict]:
+    """Open-Meteo returns a dict for one location and a list for many; unify to a list."""
+    if isinstance(payload, list):
+        return payload
+    return [payload]
+
+
+Coord = tuple[float, float]  # (latitude, longitude)
+
+
 def _range_params(
-    lat: float,
-    lon: float,
+    coords: list[Coord],
     var_map: dict[str, str],
     forecast_days: int | None,
     start_date: str | None,
     end_date: str | None,
 ) -> dict:
-    params: dict = {"latitude": lat, "longitude": lon, "hourly": ",".join(var_map)}
+    params: dict = {
+        "latitude": ",".join(str(lat) for lat, _ in coords),
+        "longitude": ",".join(str(lon) for _, lon in coords),
+        "hourly": ",".join(var_map),
+    }
     if forecast_days is not None:
         params["forecast_days"] = forecast_days
     if start_date is not None:
@@ -89,27 +102,37 @@ def _range_params(
     return params
 
 
+def _fetch_batch(
+    coords: list[Coord],
+    url: str,
+    var_map: dict[str, str],
+    forecast_days: int | None,
+    start_date: str | None,
+    end_date: str | None,
+) -> list[dict[str, dict]]:
+    params = _range_params(coords, var_map, forecast_days, start_date, end_date)
+    locations = normalize_locations(_get(url, params))
+    # Results are returned in the same order as the requested coordinates.
+    return [parse_hourly(loc, var_map) for loc in locations]
+
+
 def fetch_marine(
-    lat: float,
-    lon: float,
+    coords: list[Coord],
     url: str,
     *,
     forecast_days: int | None = None,
     start_date: str | None = None,
     end_date: str | None = None,
-) -> dict[str, dict]:
-    params = _range_params(lat, lon, MARINE_VARS, forecast_days, start_date, end_date)
-    return parse_hourly(_get(url, params), MARINE_VARS)
+) -> list[dict[str, dict]]:
+    return _fetch_batch(coords, url, MARINE_VARS, forecast_days, start_date, end_date)
 
 
 def fetch_weather(
-    lat: float,
-    lon: float,
+    coords: list[Coord],
     url: str,
     *,
     forecast_days: int | None = None,
     start_date: str | None = None,
     end_date: str | None = None,
-) -> dict[str, dict]:
-    params = _range_params(lat, lon, WEATHER_VARS, forecast_days, start_date, end_date)
-    return parse_hourly(_get(url, params), WEATHER_VARS)
+) -> list[dict[str, dict]]:
+    return _fetch_batch(coords, url, WEATHER_VARS, forecast_days, start_date, end_date)
