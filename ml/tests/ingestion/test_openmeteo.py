@@ -2,6 +2,7 @@ from before_surf.ingestion.openmeteo import (
     CONDITION_COLUMNS,
     build_condition_rows,
     merge_hourly,
+    normalize_locations,
     parse_hourly,
 )
 
@@ -32,6 +33,14 @@ def test_merge_hourly_combines_sources():
     merged = merge_hourly(a, b)
     assert merged["t0"] == {"wave_height_m": 1.0, "wind_speed_kmh": 12.0}
     assert merged["t1"] == {"wind_speed_kmh": 15.0}
+
+
+def test_normalize_locations_wraps_dict_and_passes_list():
+    # A single-location response is a dict; multi-location is a list.
+    single = {"latitude": 1.0, "hourly": {}}
+    assert normalize_locations(single) == [single]
+    multi = [{"latitude": 1.0}, {"latitude": 2.0}]
+    assert normalize_locations(multi) == multi
 
 
 def test_build_condition_rows_fills_all_columns():
