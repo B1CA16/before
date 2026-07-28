@@ -1,19 +1,19 @@
 [tool.uv.workspace]
-members = ["ml"]
+members = ["ml", "apps/api"]
 
 [tool.ruff]
 line-length = 100
 target-version = "py312"
-src = ["ml/src"]
+src = ["ml/src", "apps/api/src"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP", "SIM"]
 
 [tool.ruff.lint.isort]
-known-first-party = ["before_surf"]
+known-first-party = ["before_surf", "before_api"]
 
 [tool.pytest.ini_options]
-testpaths = ["ml/tests"]
+testpaths = ["ml/tests", "apps/api/tests"]
 addopts = "-ra"
 
 [dependency-groups]
