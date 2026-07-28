@@ -22,3 +22,7 @@ Thumbs.db
 
 # Node (added when apps/web arrives)
 node_modules/
+
+# Notebooks (jupytext .py is the source of truth)
+*.ipynb
+ml/notebooks/plots/
