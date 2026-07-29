@@ -14,6 +14,11 @@ class SpotOut(BaseModel):
     orientation_deg: float | None
 
 
+class ScoreOut(BaseModel):
+    slug: str
+    score: float | None
+
+
 class ForecastHour(BaseModel):
     observed_at: datetime
     score: float | None

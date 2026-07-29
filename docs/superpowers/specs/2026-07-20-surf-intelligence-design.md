@@ -275,12 +275,17 @@ Milestones 0-6 deliver **v0** (a usable product with an honest heuristic brain);
 | **2** | Ingestion pipeline (dynamic): daily scraper → Postgres, archive backfill, GH Actions cron | Data engineering, scheduling, idempotency | 🟡 Medium |
 | **3** | EDA + feature engineering: explore data, build shared feature module | EDA, feature engineering, interactions | 🟡 Medium |
 | **4** | Heuristic scorer v0 + eval harness: `Scorer` interface, `HeuristicScorer`, baseline | Baselines, abstraction, evaluation | 🟡 Medium |
-| **5** | API: FastAPI wrapping the Scorer (`GET /spots`, `GET /score`), deploy | Model serving, API design | 🟡 Medium |
-| **6** | Web UI: Next.js map + score + session logging (closes label loop) | Frontend integration, label collection | 🟡 Medium |
-| | **── v0 shipped ──** | | |
-| **7** | First ML model (v1): build training set, train `MLScorer`, beat the heuristic | Supervised training, train/val/test, CV, model selection | 🔴 Hard |
-| **8** | Tuning + XAI + MLOps: hyperparameter tuning, SHAP, experiment tracking, versioning, CI | Tuning, Explainable AI, MLOps | 🔴 Hard |
+| **5** | API: FastAPI wrapping the Scorer (`GET /spots`, `GET /spots/{slug}/forecast`) | Model serving, API design | 🟡 Medium |
+| **6** | Web UI (read-only): Next.js map + score forecast; deploy API + frontend | Frontend integration, deployment | 🟡 Medium |
+| | **── v0 shipped (usable product) ──** | | |
+| **7** | Session logging + labels: auth, sessions table, ratings (closes the label loop) | Auth, data modeling, GDPR | 🟡 Medium |
+| **8** | First ML model (v1): build training set from labels, train `MLScorer`, beat the heuristic | Supervised training, train/val/test, CV, model selection | 🔴 Hard |
+| **9** | Tuning + XAI + MLOps: hyperparameter tuning, SHAP, experiment tracking, versioning, CI | Tuning, Explainable AI, MLOps | 🔴 Hard |
 | | **── v1 shipped. v2 (personalization) = future ──** | | |
+
+> **Roadmap renumbered 2026-07-28:** the original M6 (map + score + session logging) was split into
+> a read-only Web UI + deploy (M6) and session logging + labels (M7); the ML model and tuning shifted
+> to M8 and M9.
 
 > **Most important lesson:** milestones 0-6 contain almost no "AI." Real ML is ~80% data
 > engineering, EDA, and evaluation plumbing; the model is the small exciting bit at the end that

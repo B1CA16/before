@@ -10,6 +10,13 @@ def _clean(value) -> float | None:
     return None if pd.isna(value) else round(float(value), 2)
 
 
+def build_score_rows(df: pd.DataFrame, scorer: HeuristicScorer) -> list[dict]:
+    if df.empty:
+        return []
+    scores = build_features(df).pipe(scorer.score)
+    return [{"slug": df["slug"].iloc[i], "score": _clean(scores.iloc[i])} for i in range(len(df))]
+
+
 def build_forecast_rows(df: pd.DataFrame, scorer: HeuristicScorer) -> list[dict]:
     explained = build_features(df).pipe(scorer.explain)
     rows: list[dict] = []
