@@ -9,7 +9,14 @@ export type Spot = {
   orientation_deg: number | null;
 };
 
-export type ScoreNow = { slug: string; score: number | null };
+export type ScoreNow = {
+  slug: string;
+  score: number | null;
+  swell_height_m: number | null;
+  swell_period_s: number | null;
+  wind_speed_kmh: number | null;
+  offshore_component: number | null;
+};
 
 export type ForecastHour = {
   observed_at: string;

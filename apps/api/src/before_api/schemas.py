@@ -17,6 +17,10 @@ class SpotOut(BaseModel):
 class ScoreOut(BaseModel):
     slug: str
     score: float | None
+    swell_height_m: float | None
+    swell_period_s: float | None
+    wind_speed_kmh: float | None
+    offshore_component: float | None
 
 
 class ForecastHour(BaseModel):

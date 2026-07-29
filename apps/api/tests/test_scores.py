@@ -35,9 +35,15 @@ def _current_df():
 
 def test_build_score_rows_and_nan():
     rows = build_score_rows(_current_df(), HeuristicScorer())
-    by_slug = {r["slug"]: r["score"] for r in rows}
-    assert 0.0 <= by_slug["carcavelos"] <= 10.0
-    assert by_slug["unknown-orient"] is None  # unknown orientation -> null score
+    by_slug = {r["slug"]: r for r in rows}
+    assert 0.0 <= by_slug["carcavelos"]["score"] <= 10.0
+    assert by_slug["unknown-orient"]["score"] is None  # unknown orientation -> null score
+    # each row also carries the current conditions for the map's info bar
+    carca = by_slug["carcavelos"]
+    assert carca["swell_height_m"] == 1.8
+    assert carca["swell_period_s"] == 12.0
+    assert carca["wind_speed_kmh"] == 8.0
+    assert carca["offshore_component"] is not None  # 270-facing beach, wind from 90 = offshore
 
 
 def test_build_score_rows_empty():

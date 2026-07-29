@@ -3,6 +3,7 @@
 from typing import Annotated
 
 from fastapi import Depends, FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 
 from before_api.forecast import build_forecast_rows, build_score_rows
 from before_api.repository import SupabaseRepository, get_repository
@@ -10,6 +11,12 @@ from before_api.schemas import ForecastHour, ScoreOut, SpotOut
 from before_surf.scoring.heuristic import HeuristicScorer
 
 app = FastAPI(title="beFORE API")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # tighten to the deployed frontend origin in production
+    allow_methods=["GET"],
+    allow_headers=["*"],
+)
 _scorer = HeuristicScorer()
 
 RepoDep = Annotated[SupabaseRepository, Depends(get_repository)]

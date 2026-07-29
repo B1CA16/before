@@ -699,11 +699,58 @@ docs: note deployment URLs and setup
 
 ---
 
+### Task 7: UI design pass (whole-interface polish)
+
+Deliberately last: a component's look can only be judged in context, so we build all the pieces
+first (map, info bar, forecast panel, chart) and then style them as one coherent system.
+
+**Files:**
+- Modify: `apps/web/src/app/globals.css` (design tokens), `layout.tsx` (shell, fonts)
+- Modify: `apps/web/src/components/SpotMap.tsx`, `ForecastPanel.tsx`, `src/lib/score.ts` (palette)
+
+**Interfaces:**
+- Produces: a consistent visual system (palette, type scale, spacing, radii, shadows) applied across
+  the map, info bar, and forecast panel.
+
+- [ ] **Step 1: agree the direction with mockups**
+
+Load the `frontend-design` skill. Build a single self-contained HTML file showing ~5 whole-UI
+directions (not single components): header + map + info bar + forecast panel together, each with its
+own palette, type treatment, and density. Serve it locally for Francisco to compare, then he picks.
+
+- [ ] **Step 2: define design tokens**
+
+In `globals.css`, define CSS variables for the chosen palette (surface, text, accent, and the score
+ramp), plus a type scale and spacing/radius/shadow values. The score ramp must stay colorblind-safe
+and keep the numeric score as a second cue.
+
+- [ ] **Step 3: restyle the components against the tokens**
+
+Update `SpotMap` (pins, info bar), `ForecastPanel` (panel, chart colors, axis/grid styling), and the
+app shell to use the tokens. No hard-coded one-off colors left in components; `score.ts` reads the
+ramp from the tokens.
+
+- [ ] **Step 4: verify**
+
+Run: `npm test; npm run build`, then check the live app at desktop and mobile widths.
+Expected: tests and build pass; the map, bar, and panel visibly read as one designed product.
+
+- [ ] **Step 5: Commit**
+
+Message:
+```
+style: apply a coherent UI design system
+```
+
+---
+
 ## Definition of done for Milestone 6
 
 - `GET /scores` implemented and tested; roadmap renumbered in the spec.
 - `apps/web` Next.js app: score-colored map + forecast timeline, talking to the API; pure helpers
   unit-tested; `npm run build` and lint pass; web CI job green.
+- A whole-interface design pass applied (Task 7): shared design tokens, and the map, info bar, and
+  forecast panel read as one coherent product rather than default-styled components.
 - API and frontend deployed to free hosts; the live site loads real data on desktop and mobile.
 - Python suite + pre-commit pass; CI green.
 
