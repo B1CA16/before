@@ -57,10 +57,12 @@ export default function SpotMap({
   spots,
   scores,
   onSelect,
+  hideInfoBar = false,
 }: {
   spots: Spot[];
   scores: Record<string, ScoreNow>;
   onSelect: (slug: string) => void;
+  hideInfoBar?: boolean;
 }) {
   const [hovered, setHovered] = useState<string | null>(null);
   const hoveredSpot = hovered ? spots.find((s) => s.slug === hovered) : null;
@@ -85,7 +87,7 @@ export default function SpotMap({
           />
         ))}
       </MapContainer>
-      {hoveredSpot && <InfoBar spot={hoveredSpot} sc={scores[hoveredSpot.slug]} />}
+      {hoveredSpot && !hideInfoBar && <InfoBar spot={hoveredSpot} sc={scores[hoveredSpot.slug]} />}
     </div>
   );
 }

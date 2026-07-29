@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { getScores, getSpots, type ScoreNow, type Spot } from "@/lib/api";
 
 const SpotMap = dynamic(() => import("@/components/SpotMap"), { ssr: false });
+const ForecastPanel = dynamic(() => import("@/components/ForecastPanel"), { ssr: false });
 
 export default function Home() {
   const [spots, setSpots] = useState<Spot[]>([]);
@@ -19,13 +20,23 @@ export default function Home() {
       .catch(console.error);
   }, []);
 
+  const selectedSpot = selected ? spots.find((s) => s.slug === selected) : null;
+
   return (
-    <main className="h-screen w-screen">
-      <SpotMap spots={spots} scores={scores} onSelect={setSelected} />
-      {selected && (
-        <div className="absolute right-2 top-2 z-[1000] rounded bg-white p-3 text-sm shadow">
-          selected: {selected}
-        </div>
+    <main className="relative h-screen w-screen">
+      <SpotMap
+        spots={spots}
+        scores={scores}
+        onSelect={setSelected}
+        hideInfoBar={selected !== null}
+      />
+      {selectedSpot && (
+        <ForecastPanel
+          key={selectedSpot.slug}
+          slug={selectedSpot.slug}
+          name={selectedSpot.name}
+          onClose={() => setSelected(null)}
+        />
       )}
     </main>
   );
