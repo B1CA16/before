@@ -1,36 +1,41 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# beFORE web
 
-## Getting Started
+Next.js (App Router, TypeScript, Tailwind) frontend. Shows a map of surf spots colored by their
+current BeFORE score, and a forecast timeline per spot. Talks to the Python API over HTTP.
 
-First, run the development server:
+## Run locally
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+1. Start the API (from the repo root, port 8000):
+   `uv run uvicorn before_api.main:app --port 8000 --reload`
+2. Start the web app:
+   `cd apps/web && npm install && npm run dev`
+3. Open http://localhost:3000
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+`NEXT_PUBLIC_API_URL` (see `.env.example`) points at the API and defaults to
+`http://127.0.0.1:8000`. Note it is inlined at BUILD time, so a production build bakes in whatever
+URL was set when it was built; change it and rebuild.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Checks
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- `npm test` unit tests (Vitest) for the pure helpers.
+- `npm run lint` ESLint.
+- `npm run build` TypeScript plus production build.
 
-## Learn More
+CI runs all three on every push and pull request.
 
-To learn more about Next.js, take a look at the following resources:
+## Structure
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- `src/lib/api.ts` typed API client (`getSpots`, `getScores`, `getForecast`).
+- `src/lib/score.ts` score to color/label helpers and the wind label. Unit-tested.
+- `src/lib/forecast.ts` upcoming-hour filtering and best-hour selection. Unit-tested.
+- `src/components/SpotMap.tsx` client-only Leaflet map: teardrop pins colored and numbered by
+  score, with a docked info bar on hover.
+- `src/components/ForecastPanel.tsx` bottom panel with a Recharts score-over-time chart.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Both components are browser-only, so they are loaded with `dynamic(..., { ssr: false })`.
 
-## Deploy on Vercel
+## Notes
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Map tiles come from OpenStreetMap; the required attribution is displayed on the map.
+- The API returns all forecast rows including past hours, so the UI filters to upcoming ones.
+- Visual design is intentionally plain for now; a whole-interface design pass is a tracked task.
