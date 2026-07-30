@@ -641,68 +641,11 @@ ci: add web lint/test/build job and docs
 
 ---
 
-### Task 6: deploy API and frontend
+### Task 6: UI design pass (whole-interface polish)
 
-**Files:**
-- Create: deploy config as needed (host-specific; e.g. `apps/api` start command).
-
-**Interfaces:**
-- Produces: a live API URL and a live frontend URL.
-
-- [ ] **Step 1: deploy the API to a free Python host (Francisco)**
-
-Recommended: Render (free web service) or Hugging Face Spaces.
-- Start command: `uvicorn before_api.main:app --host 0.0.0.0 --port $PORT`.
-- Set env var `DATABASE_URL` (the Supabase session-pooler URI) in the host's dashboard.
-- Note: free tiers spin down when idle (cold start ~30s on first request). Accepted for now.
-- Verify the live API: open `<api-url>/docs` and `<api-url>/spots`.
-
-- [ ] **Step 2: deploy the frontend to Vercel (Francisco)**
-
-- Import the GitHub repo in Vercel; set the project root to `apps/web`.
-- Set env var `NEXT_PUBLIC_API_URL` to the live API URL from Step 1 (remember: build-time inlined,
-  so redeploy if you change it).
-- Deploy; Vercel gives a live URL.
-
-- [ ] **Step 3: configure API CORS for the Vercel origin**
-
-The browser will block cross-origin calls unless the API allows the Vercel origin. Add CORS to
-`apps/api/src/before_api/main.py`:
-```python
-from fastapi.middleware.cors import CORSMiddleware
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # tighten to the Vercel domain once known
-    allow_methods=["GET"],
-    allow_headers=["*"],
-)
-```
-Commit:
-```
-feat: enable CORS for the web frontend
-```
-Redeploy the API.
-
-- [ ] **Step 4: verify the live site (Francisco)**
-
-Open the Vercel URL. Expected: the map loads with colored markers (data from the live API), and
-clicking a spot shows its forecast. Confirm on both desktop and phone.
-
-- [ ] **Step 5: full backend suite and hooks, final commit**
-
-Run: `uv run pytest` then `uv run pre-commit run --all-files`
-Expected: all pass. Commit any remaining docs:
-```
-docs: note deployment URLs and setup
-```
-
----
-
-### Task 7: UI design pass (whole-interface polish)
-
-Deliberately last: a component's look can only be judged in context, so we build all the pieces
-first (map, info bar, forecast panel, chart) and then style them as one coherent system.
+Deliberately after the functional pieces: a component's look can only be judged in context, so we
+build everything first (map, info bar, forecast panel, chart) and then style them as one coherent
+system. Reordered 2026-07-29 to run before deployment, so the first public URL is presentable.
 
 **Files:**
 - Modify: `apps/web/src/app/globals.css` (design tokens), `layout.tsx` (shell, fonts)
@@ -744,18 +687,80 @@ style: apply a coherent UI design system
 
 ---
 
+### Task 7: deploy API and frontend
+
+Runs last so the first public URL shows the designed UI. Deploy is still inside M6 because M7
+(session logging) needs a live URL to collect labels from real users.
+
+**Files:**
+- Create: deploy config as needed (host-specific; e.g. `apps/api` start command).
+- Modify: `apps/api/src/before_api/main.py` (tighten CORS to the deployed origin).
+
+**Interfaces:**
+- Produces: a live API URL and a live frontend URL.
+
+- [ ] **Step 1: deploy the API to a free Python host (Francisco)**
+
+Recommended: Render (free web service) or Hugging Face Spaces.
+- Start command: `uvicorn before_api.main:app --host 0.0.0.0 --port $PORT`.
+- Set env var `DATABASE_URL` (the Supabase session-pooler URI) in the host's dashboard.
+- Note: free tiers spin down when idle (cold start ~30s on first request). Accepted for now.
+- Verify the live API: open `<api-url>/docs` and `<api-url>/spots`.
+
+- [ ] **Step 2: deploy the frontend to Vercel (Francisco)**
+
+- Import the GitHub repo in Vercel; set the project root to `apps/web`.
+- Set env var `NEXT_PUBLIC_API_URL` to the live API URL from Step 1 (remember: build-time inlined,
+  so redeploy if you change it).
+- Deploy; Vercel gives a live URL.
+
+- [ ] **Step 3: tighten CORS to the deployed origin**
+
+`CORSMiddleware` is already wired up (added in Task 3 with `allow_origins=["*"]`, since the browser
+needs CORS even for local dev). Now that the Vercel domain is known, replace the wildcard with the
+real origins:
+```python
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000", "https://<your-app>.vercel.app"],
+    allow_methods=["GET"],
+    allow_headers=["*"],
+)
+```
+Run `uv run pytest apps/api/tests/ -q` (expected: all pass), then commit and redeploy the API:
+```
+chore: restrict API CORS to known origins
+```
+
+- [ ] **Step 4: verify the live site (Francisco)**
+
+Open the Vercel URL. Expected: the map loads with colored markers (data from the live API), and
+clicking a spot shows its forecast. Confirm on both desktop and phone. Also confirm the `web` CI job
+went green on GitHub.
+
+- [ ] **Step 5: full suite, hooks, and final docs commit**
+
+Run: `uv run pytest` then `uv run pre-commit run --all-files`
+Expected: all pass. Record the live URLs in `README.md`, then commit:
+```
+docs: note deployment URLs and setup
+```
+
+---
+
 ## Definition of done for Milestone 6
 
 - `GET /scores` implemented and tested; roadmap renumbered in the spec.
 - `apps/web` Next.js app: score-colored map + forecast timeline, talking to the API; pure helpers
   unit-tested; `npm run build` and lint pass; web CI job green.
-- A whole-interface design pass applied (Task 7): shared design tokens, and the map, info bar, and
+- A whole-interface design pass applied (Task 6): shared design tokens, and the map, info bar, and
   forecast panel read as one coherent product rather than default-styled components.
-- API and frontend deployed to free hosts; the live site loads real data on desktop and mobile.
+- API and frontend deployed to free hosts (Task 7, after the design pass); the live site loads real
+  data on desktop and mobile, with CORS restricted to the known origins.
 - Python suite + pre-commit pass; CI green.
 
 ## Deferred (not in M6)
 
 - Session logging, auth, ratings (Milestone 7, the label loop).
-- Marker clustering, richer charts, tightened CORS origin, custom domain.
+- Marker clustering, richer charts, custom domain.
 - Pruning old forecast rows / filtering the forecast to future hours (revisit in M7 or as cleanup).
