@@ -3,91 +3,148 @@
 import "leaflet/dist/leaflet.css";
 
 import L from "leaflet";
-import { useState } from "react";
-import { MapContainer, Marker, TileLayer } from "react-leaflet";
+import { useEffect, useRef } from "react";
+import { MapContainer, Marker, TileLayer, useMap } from "react-leaflet";
 
 import type { ScoreNow, Spot } from "@/lib/api";
-import { scoreColor, scoreLabel, windLabel } from "@/lib/score";
+import { scoreColor, scoreLabel } from "@/lib/score";
 
-// Teardrop pin, colored by score, with the score inside. No image assets (divIcon = pure HTML).
-function pinIcon(score: number | null): L.DivIcon {
-  const color = scoreColor(score);
-  return L.divIcon({
-    className: "",
-    html: `<div style="width:30px;height:30px;border-radius:9999px 9999px 9999px 2px;
-        transform:rotate(45deg);background:${color};border:2px solid #fff;
-        box-shadow:0 2px 5px rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;">
-        <span style="transform:rotate(-45deg);color:#fff;font-weight:700;font-size:12px;">
-        ${scoreLabel(score)}</span></div>`,
-    iconSize: [30, 30],
-    iconAnchor: [15, 28],
-  });
+/**
+ * Frame the map on the spots themselves. The detail card floats over the bottom right on wide
+ * screens, so the bounds are padded on that side to keep the coastline clear of it.
+ */
+function FlyToSelected({ spots, selected }: { spots: Spot[]; selected: string | null }) {
+  const map = useMap();
+  const previous = useRef<string | null>(null);
+  useEffect(() => {
+    const wasNull = previous.current === null;
+    previous.current = selected;
+    // The first non-null selection is the automatic default (the best spot), so keep the fitted
+    // overview of the whole coast. Only a deliberate change of spot moves the map.
+    if (wasNull || selected === null) return;
+    const spot = spots.find((s) => s.slug === selected);
+    if (!spot) return;
+    map.flyTo([spot.latitude, spot.longitude], Math.max(map.getZoom(), 11), { duration: 0.7 });
+  }, [map, spots, selected]);
+  return null;
 }
 
-const fmt = (v: number | null | undefined, unit: string) => (v == null ? "-" : `${v}${unit}`);
+function MapChrome({ spots }: { spots: Spot[] }) {
+  const map = useMap();
 
-function InfoBar({ spot, sc }: { spot: Spot; sc: ScoreNow | undefined }) {
-  const score = sc?.score ?? null;
-  return (
-    <div className="pointer-events-none absolute inset-x-3 bottom-3 z-[1000] flex items-center gap-4 rounded-xl bg-slate-900/90 px-4 py-3 text-white shadow-2xl backdrop-blur">
-      <div
-        className="flex h-12 w-12 flex-none items-center justify-center rounded-lg text-lg font-extrabold"
-        style={{ background: scoreColor(score) }}
-      >
-        {scoreLabel(score)}
-      </div>
-      <div className="min-w-0 flex-1">
-        <div className="truncate text-sm font-bold">{spot.name}</div>
-        <div className="text-xs text-slate-300">{spot.region}</div>
-      </div>
-      <div className="hidden gap-4 text-xs text-slate-300 sm:flex">
-        <span>
-          <b className="text-white">{fmt(sc?.swell_height_m, "m")}</b> swell
-        </span>
-        <span>
-          <b className="text-white">{fmt(sc?.swell_period_s, "s")}</b> period
-        </span>
-        <span className="text-white">{windLabel(sc?.offshore_component ?? null)}</span>
-      </div>
-    </div>
-  );
+  // Leaflet puts the attribution bottom right by default, where the detail card sits.
+  useEffect(() => {
+    map.attributionControl?.setPosition("bottomleft");
+  }, [map]);
+
+  useEffect(() => {
+    if (spots.length === 0) return;
+    const bounds = L.latLngBounds(spots.map((s) => [s.latitude, s.longitude] as [number, number]));
+    const wide = map.getSize().x > 900;
+    map.fitBounds(bounds, {
+      paddingTopLeft: [40, 48],
+      paddingBottomRight: wide ? [420, 48] : [40, 220],
+    });
+  }, [map, spots]);
+  return null;
+}
+
+/**
+ * Pins are ranked, not uniform. Built as divIcons (pure HTML, no image assets). The job is finding where it is good, so poor spots recede to a
+ * The job is finding where it is good, so only the leading handful carry a numbered badge and the
+ * rest recede to a dot. Ranking by position rather than by score keeps the map legible whatever the
+ * conditions are: on a flat week everything would otherwise qualify and pile up.
+ */
+function pinIcon(
+  score: number | null,
+  featured: boolean,
+  selected: boolean,
+  hovered: boolean
+): L.DivIcon {
+  const color = scoreColor(score);
+
+  if (!featured && !selected) {
+    const d = hovered ? 16 : 12;
+    return L.divIcon({
+      className: hovered ? "pin-hovered" : "",
+      html: `<div class="pin-shape" style="width:${d}px;height:${d}px;border-radius:999px;
+          background:${color};opacity:${hovered ? 0.95 : 0.55};
+          border:1.5px solid var(--color-marker-edge);
+          box-shadow:0 1px 4px rgb(16 24 40 / .3);"></div>`,
+      iconSize: [d, d],
+      iconAnchor: [d / 2, d / 2],
+    });
+  }
+
+  // A teardrop pin: round on three corners, pointed at the bottom left once rotated, so the tip
+  // marks the actual spot. The score sits upright inside it.
+  const size = selected ? 34 : 30;
+  const ring = selected
+    ? "box-shadow:0 0 0 2px var(--color-marker-edge), 0 0 0 4px var(--color-accent), 0 6px 16px rgb(16 24 40 / .38);"
+    : "box-shadow:0 0 0 2px var(--color-marker-edge), 0 4px 12px rgb(16 24 40 / .32);";
+  // A radar ring pings off the selected pin, echoing the mark in the logo.
+  const ping = selected ? '<span class="pin-ping"></span>' : "";
+  return L.divIcon({
+    className: hovered ? "pin-hovered" : "",
+    html: `<div style="position:relative;width:${size}px;height:${size}px;">${ping}
+        <div class="pin-shape" style="width:${size}px;height:${size}px;background:${color};
+        transform:rotate(45deg);border-radius:9999px 9999px 9999px 3px;display:flex;
+        align-items:center;justify-content:center;${ring}">
+        <span style="transform:rotate(-45deg);color:var(--color-badge-ink);font-weight:800;
+        font-size:${selected ? 13 : 12}px;letter-spacing:-.02em;font-variant-numeric:tabular-nums;">
+        ${scoreLabel(score)}</span></div></div>`,
+    iconSize: [size, size],
+    // The tip is the bottom-left corner after rotation, so anchor there rather than the centre.
+    iconAnchor: [size / 2, size],
+  });
 }
 
 export default function SpotMap({
   spots,
   scores,
+  featured,
+  selected,
+  hovered,
   onSelect,
-  hideInfoBar = false,
+  onHover,
 }: {
   spots: Spot[];
   scores: Record<string, ScoreNow>;
+  featured: Set<string>;
+  selected: string | null;
+  hovered: string | null;
   onSelect: (slug: string) => void;
-  hideInfoBar?: boolean;
+  onHover: (slug: string | null) => void;
 }) {
-  const [hovered, setHovered] = useState<string | null>(null);
-  const hoveredSpot = hovered ? spots.find((s) => s.slug === hovered) : null;
-
   return (
-    <div className="relative h-full w-full">
-      <MapContainer center={[38.9, -9.4]} zoom={10} className="h-full w-full">
-        <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+    <MapContainer center={[38.85, -9.4]} zoom={10} zoomControl={false} className="h-full w-full">
+      {/* Voyager rather than the flat grey light basemap: it renders water with a real tint, so the
+          Atlantic does not read as dead space. CARTO tiles, OSM data. */}
+      <TileLayer
+        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, &copy; <a href="https://carto.com/attributions">CARTO</a>'
+        url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png"
+      />
+      <MapChrome spots={spots} />
+      <FlyToSelected spots={spots} selected={selected} />
+      {spots.map((spot) => (
+        <Marker
+          key={spot.slug}
+          position={[spot.latitude, spot.longitude]}
+          icon={pinIcon(
+            scores[spot.slug]?.score ?? null,
+            featured.has(spot.slug),
+            spot.slug === selected,
+            spot.slug === hovered
+          )}
+          zIndexOffset={spot.slug === selected ? 1000 : 0}
+          eventHandlers={{
+            click: () => onSelect(spot.slug),
+            mouseover: () => onHover(spot.slug),
+            mouseout: () => onHover(null),
+          }}
+          alt={spot.name}
         />
-        {spots.map((spot) => (
-          <Marker
-            key={spot.slug}
-            position={[spot.latitude, spot.longitude]}
-            icon={pinIcon(scores[spot.slug]?.score ?? null)}
-            eventHandlers={{
-              click: () => onSelect(spot.slug),
-              mouseover: () => setHovered(spot.slug),
-              mouseout: () => setHovered(null),
-            }}
-          />
-        ))}
-      </MapContainer>
-      {hoveredSpot && !hideInfoBar && <InfoBar spot={hoveredSpot} sc={scores[hoveredSpot.slug]} />}
-    </div>
+      ))}
+    </MapContainer>
   );
 }

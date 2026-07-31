@@ -314,6 +314,12 @@ Milestones 0-6 deliver **v0** (a usable product with an honest heuristic brain);
 - Exact API deploy host (Vercel functions vs HF Spaces vs Render) → **M5**.
 - Experiment-tracking tool (MLflow vs W&B) → **M8**.
 - Multi-sport module restructuring → when sport #2 is scheduled.
+- **Internationalisation (i18n)** → deferred, but planned. The interface is English only and dates
+  are formatted with a hard-coded `en-GB` locale (`UI_LOCALE` in `apps/web/src/lib/forecast.ts`),
+  chosen deliberately after the browser locale produced Portuguese day names inside an English UI.
+  Portuguese is the obvious first translation given the user base is the Portuguese coast. Doing it
+  properly means extracting UI strings, a locale-aware date and unit formatter (metres and seconds
+  are already metric, so units are fine), and a language switch. Revisit once the product is live.
 
 ## Decisions made after initial approval (see ADRs)
 

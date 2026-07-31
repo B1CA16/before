@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { scoreColor, scoreLabel, windLabel } from "./score";
+import { SCORE_COLORS, scoreColor, scoreLabel, scoreWord, windLabel } from "./score";
 
 describe("score helpers", () => {
   it("labels a score to one decimal, dash for null", () => {
@@ -8,12 +8,22 @@ describe("score helpers", () => {
     expect(scoreLabel(null)).toBe("-");
   });
 
-  it("maps scores to distinct colors, grey for null", () => {
-    const good = scoreColor(8);
-    const poor = scoreColor(2);
-    const unknown = scoreColor(null);
-    expect(good).not.toBe(poor);
-    expect(unknown).toBe("#9ca3af"); // grey
+  it("maps each score band to its own colour", () => {
+    expect(scoreColor(null)).toBe(SCORE_COLORS.unknown);
+    expect(scoreColor(1)).toBe(SCORE_COLORS.flat);
+    expect(scoreColor(4)).toBe(SCORE_COLORS.marginal);
+    expect(scoreColor(6)).toBe(SCORE_COLORS.fun);
+    expect(scoreColor(8)).toBe(SCORE_COLORS.firing);
+    // every band is visually distinct
+    expect(new Set(Object.values(SCORE_COLORS)).size).toBe(5);
+  });
+
+  it("describes a score in plain words", () => {
+    expect(scoreWord(8)).toBe("firing");
+    expect(scoreWord(6)).toBe("fun");
+    expect(scoreWord(4)).toBe("marginal");
+    expect(scoreWord(1)).toBe("flat");
+    expect(scoreWord(null)).toBe("no reading");
   });
 
   it("labels wind from the offshore component", () => {

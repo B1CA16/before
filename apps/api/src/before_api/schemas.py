@@ -21,6 +21,9 @@ class ScoreOut(BaseModel):
     swell_period_s: float | None
     wind_speed_kmh: float | None
     offshore_component: float | None
+    # The raw bearings, so the UI can draw the geometry the score is built from.
+    swell_direction_deg: float | None
+    wind_direction_deg: float | None
 
 
 class ForecastHour(BaseModel):

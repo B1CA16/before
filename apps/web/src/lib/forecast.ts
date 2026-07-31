@@ -16,8 +16,12 @@ export function bestHour(hours: ForecastHour[]): ForecastHour | null {
   return best;
 }
 
+// The interface is written in English, so dates are formatted in English too rather than
+// following the browser locale, which produced Portuguese day names inside an English UI.
+export const UI_LOCALE = "en-GB";
+
 export function formatHour(iso: string): string {
-  return new Date(iso).toLocaleString(undefined, {
+  return new Date(iso).toLocaleString(UI_LOCALE, {
     weekday: "short",
     hour: "2-digit",
     minute: "2-digit",

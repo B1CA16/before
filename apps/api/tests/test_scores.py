@@ -44,6 +44,9 @@ def test_build_score_rows_and_nan():
     assert carca["swell_period_s"] == 12.0
     assert carca["wind_speed_kmh"] == 8.0
     assert carca["offshore_component"] is not None  # 270-facing beach, wind from 90 = offshore
+    # the raw bearings travel through so the UI can draw the geometry
+    assert carca["swell_direction_deg"] == 270.0
+    assert carca["wind_direction_deg"] == 90.0
 
 
 def test_build_score_rows_empty():

@@ -23,6 +23,8 @@ def build_score_rows(df: pd.DataFrame, scorer: HeuristicScorer) -> list[dict]:
             "swell_period_s": _clean(df["swell_period_s"].iloc[i]),
             "wind_speed_kmh": _clean(df["wind_speed_kmh"].iloc[i]),
             "offshore_component": _clean(feats["offshore_component"].iloc[i]),
+            "swell_direction_deg": _clean(df["swell_direction_deg"].iloc[i]),
+            "wind_direction_deg": _clean(df["wind_direction_deg"].iloc[i]),
         }
         for i in range(len(df))
     ]

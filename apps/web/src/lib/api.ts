@@ -16,6 +16,8 @@ export type ScoreNow = {
   swell_period_s: number | null;
   wind_speed_kmh: number | null;
   offshore_component: number | null;
+  swell_direction_deg: number | null;
+  wind_direction_deg: number | null;
 };
 
 export type ForecastHour = {
