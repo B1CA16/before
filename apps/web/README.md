@@ -15,6 +15,20 @@ current BeFORE score, and a forecast timeline per spot. Talks to the Python API 
 `http://127.0.0.1:8000`. Note it is inlined at BUILD time, so a production build bakes in whatever
 URL was set when it was built; change it and rebuild.
 
+## Looking at it
+
+Reviewing a UI by reading its source does not work. With the API and dev server running:
+
+```
+npx playwright install chromium   # once
+npm run shots                     # capture desktop, laptop and mobile
+npm run shots -- --loading        # also capture the loading states
+```
+
+Images land in `.screenshots/` (gitignored) and the command exits non-zero on any console or page
+error, so it doubles as a smoke test. Blind spot: headless Chromium uses overlay scrollbars, so
+scrollbar appearance has to be checked in a real browser.
+
 ## Checks
 
 - `npm test` unit tests (Vitest) for the pure helpers.

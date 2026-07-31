@@ -47,7 +47,11 @@ jobs:
           cache-dependency-path: apps/web/package-lock.json
 
       - name: Install dependencies
+        # The screenshot script needs Playwright locally, but CI never runs a browser, so skip the
+        # ~100 MB browser download.
         run: npm ci
+        env:
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
 
       - name: Lint
         run: npm run lint
