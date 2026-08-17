@@ -1,0 +1,25 @@
+# Render blueprint for the beFORE API.
+#
+# The repo is a uv workspace, so the build installs uv and syncs the whole workspace from the
+# committed lockfile. That is what makes the deployed environment identical to a local one.
+#
+# Free tier caveat: the service spins down when idle, so the first request after a quiet spell
+# takes roughly 30 to 60 seconds. Acceptable for now; the frontend shows its loading state.
+services:
+  - type: web
+    name: before-api
+    runtime: python
+    plan: free
+    region: frankfurt
+    buildCommand: pip install uv && uv sync --all-packages --locked
+    startCommand: uv run uvicorn before_api.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12"
+      # Set in the Render dashboard, never committed: the Supabase session-pooler URI.
+      - key: DATABASE_URL
+        sync: false
+      # Set once the Vercel domain exists, e.g. https://before.vercel.app
+      - key: ALLOWED_ORIGINS
+        sync: false

@@ -13,6 +13,9 @@ class Settings(BaseSettings):
     app_env: str = "development"
     database_url: str | None = None
     supabase_project_ref: str | None = None
+    # Comma-separated origins the browser may call the API from. A wildcard is fine locally; in
+    # production set it to the deployed frontend so the API is not readable by every site.
+    allowed_origins: str = "*"
     overpass_url: str = "https://overpass-api.de/api/interpreter"
     marine_url: str = "https://marine-api.open-meteo.com/v1/marine"
     weather_forecast_url: str = "https://api.open-meteo.com/v1/forecast"

@@ -18,6 +18,18 @@ order by c.observed_at
 """
 
 
+_CURRENT_CONDITIONS_QUERY = """
+select distinct on (s.slug)
+       s.slug, s.orientation_deg,
+       c.swell_height_m, c.swell_period_s, c.swell_direction_deg,
+       c.wind_speed_kmh, c.wind_direction_deg
+from spots s
+join conditions c on c.spot_id = s.id and c.source = 'forecast'
+where c.observed_at >= now()
+order by s.slug, c.observed_at
+"""
+
+
 def _rows_as_dicts(cursor) -> list[dict]:
     columns = [desc.name for desc in cursor.description]
     return [dict(zip(columns, row, strict=True)) for row in cursor.fetchall()]
@@ -43,6 +55,13 @@ class SupabaseRepository:
     def get_forecast(self, slug: str) -> pd.DataFrame:
         with psycopg.connect(self.database_url) as conn:
             cur = conn.execute(_FORECAST_QUERY, {"slug": slug})
+            columns = [desc.name for desc in cur.description]
+            data = cur.fetchall()
+        return pd.DataFrame(data, columns=columns)
+
+    def get_current_conditions(self) -> pd.DataFrame:
+        with psycopg.connect(self.database_url) as conn:
+            cur = conn.execute(_CURRENT_CONDITIONS_QUERY)
             columns = [desc.name for desc in cur.description]
             data = cur.fetchall()
         return pd.DataFrame(data, columns=columns)

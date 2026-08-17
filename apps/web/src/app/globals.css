@@ -1,0 +1,587 @@
+@import "tailwindcss";
+
+/* ============================================================================
+   beFORE design system
+
+   Every value below is a decision, and nothing outside this file invents one.
+   Components compose these tokens and the component classes at the bottom.
+
+   Colour has two separate jobs, kept apart on purpose:
+   - The brand violet marks interface state only: selection, focus, the chart line.
+   - Score colours live in src/lib/score.ts. They are data, validated for contrast
+     and colour-vision separation, and always paired with the number and the word.
+   ============================================================================ */
+@theme {
+  /* --- surfaces. Light, cool and quiet, so the violet accent and the score colours are the
+         only things with hue. Four steps, no more. --- */
+  --color-app: #f4f6f8; /* the page behind everything */
+  --color-panel: #ffffff; /* cards, rails, bars */
+  --color-inset: #f2f4f7; /* a card inside a card */
+  --color-hairline: #e5e8ed; /* default border */
+  --color-edge: #d3d8e0; /* border on raised or focused things */
+
+  /* --- text. Three steps: read it, scan it, ignore it. Primary is the logo's own navy. --- */
+  --color-primary: #101828;
+  --color-secondary: #4a5567;
+  --color-faint: #98a2b3;
+
+  /* --- accent: the brand violet, which is drawn for light backgrounds --- */
+  --color-accent: #5227e5;
+  --color-accent-ink: #4318c9;
+
+  /* Ink that sits on a saturated score colour. Always dark, whatever the surface does. */
+  --color-badge-ink: #0d1117;
+
+  /* The sea, matching the basemap so the map never flashes a different colour while loading. */
+  --color-water: #dfe6ea;
+  /* Pin and marker outline, so markers read against both land and water. */
+  --color-marker-edge: #ffffff;
+
+  /* --- type scale. Each step exists for one job. --- */
+  --text-micro: 0.625rem; /* 10px, chips */
+  --text-label: 0.6875rem; /* 11px, field labels */
+  --text-meta: 0.75rem; /* 12px, secondary lines */
+  --text-body: 0.8125rem; /* 13px, prose */
+  --text-value: 0.9375rem; /* 15px, stat values */
+  --text-title: 1.125rem; /* 18px, panel and spot titles */
+  --text-display: 2.5rem; /* 40px, the score */
+
+  --radius-chip: 12px;
+  --radius-panel: 18px;
+
+  /* Elevation. Level 0 sits on the surface, 3 floats over the map. */
+  --shadow-1: 0 1px 2px rgb(16 24 40 / 0.04);
+  --shadow-2: 0 2px 4px rgb(16 24 40 / 0.06), 0 8px 16px -6px rgb(16 24 40 / 0.08);
+  --shadow-3:
+    0 1px 2px rgb(16 24 40 / 0.06), 0 8px 20px -6px rgb(16 24 40 / 0.12),
+    0 24px 48px -16px rgb(16 24 40 / 0.22);
+
+  --font-sans: var(--font-jakarta), system-ui, -apple-system, sans-serif;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background: var(--color-app);
+  color: var(--color-primary);
+  font-family: var(--font-sans);
+  font-size: var(--text-body);
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+*:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
+
+/* ============================================================================
+   Component classes, declared in the components layer.
+
+   The layer matters: these classes set `display`, and Tailwind utilities like
+   `hidden` must be able to override them. Plain CSS after the import would win
+   on source order instead, which silently broke responsive hiding.
+   ============================================================================ */
+@layer components {
+  /* A panel: the one card treatment used everywhere. */
+  .panel {
+    background: var(--color-panel);
+    border: 1px solid var(--color-hairline);
+    border-radius: var(--radius-panel);
+    box-shadow: var(--shadow-1);
+  }
+
+  .panel-raised {
+    background: color-mix(in srgb, var(--color-panel) 92%, transparent);
+    border: 1px solid var(--color-hairline);
+    border-radius: var(--radius-panel);
+    box-shadow: var(--shadow-3);
+    backdrop-filter: blur(12px) saturate(1.2);
+  }
+
+  /* Scrollbars, styled rather than left to the browser default. */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-edge) transparent;
+  }
+
+  *::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  *::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  *::-webkit-scrollbar-thumb {
+    background-color: var(--color-edge);
+    border-radius: 999px;
+    border: 3px solid transparent;
+    background-clip: content-box;
+  }
+
+  *::-webkit-scrollbar-thumb:hover {
+    background-color: var(--color-faint);
+  }
+
+  /* A field label. Small, quiet, uppercase, always above its value. */
+  .label {
+    font-size: var(--text-label);
+    font-weight: 600;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--color-faint);
+    line-height: 1.2;
+  }
+
+  /* A section heading inside a panel. Same rhythm as .label, slightly stronger. */
+  .section-title {
+    font-size: var(--text-label);
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--color-secondary);
+    line-height: 1.2;
+  }
+
+  .title {
+    font-size: var(--text-title);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.25;
+  }
+
+  .value {
+    font-size: var(--text-value);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.3;
+  }
+
+  .meta {
+    font-size: var(--text-meta);
+    color: var(--color-secondary);
+    line-height: 1.45;
+  }
+
+  .faint {
+    font-size: var(--text-meta);
+    color: var(--color-faint);
+    line-height: 1.45;
+  }
+
+  /* The one big number on the screen. */
+  .display-score {
+    font-size: var(--text-display);
+    font-weight: 800;
+    letter-spacing: -0.04em;
+    line-height: 0.9;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* A stat tile: label over value, on the inset surface. */
+  .stat {
+    background: var(--color-inset);
+    border: 1px solid var(--color-hairline);
+    border-radius: var(--radius-chip);
+    padding: 0.625rem 0.75rem;
+  }
+
+  /* A pill: the navbar and toolbar control shape. Rounded like everything else. */
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: var(--color-inset);
+    border: 1px solid var(--color-hairline);
+    border-radius: 999px;
+    padding: 0.4375rem 0.875rem;
+    font-size: var(--text-meta);
+    color: var(--color-secondary);
+    line-height: 1;
+    white-space: nowrap;
+  }
+
+  button.pill {
+    cursor: pointer;
+  }
+
+  button.pill:hover {
+    border-color: var(--color-edge);
+    color: var(--color-primary);
+  }
+
+  /* A row card: the list item treatment, matching the panel language. */
+  .row-card {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    gap: 0.75rem;
+    text-align: left;
+    background: var(--color-panel);
+    border: 1px solid var(--color-hairline);
+    border-radius: var(--radius-panel);
+    padding: 0.625rem 0.75rem;
+    cursor: pointer;
+    transition:
+      border-color 0.15s ease,
+      box-shadow 0.15s ease,
+      transform 0.15s ease;
+  }
+
+  .row-card:hover {
+    border-color: var(--color-edge);
+    box-shadow: var(--shadow-2);
+  }
+
+  .row-card[aria-current="true"] {
+    background: color-mix(in srgb, var(--color-accent) 5%, var(--color-panel));
+    border-color: color-mix(in srgb, var(--color-accent) 28%, var(--color-hairline));
+    box-shadow: var(--shadow-2);
+  }
+
+  /* A text input shaped like the other pills. */
+  .field {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: var(--color-inset);
+    border: 1px solid var(--color-hairline);
+    border-radius: 999px;
+    padding: 0.4375rem 0.875rem;
+    color: var(--color-secondary);
+  }
+
+  .field:focus-within {
+    border-color: var(--color-edge);
+    background: var(--color-panel);
+    box-shadow: var(--shadow-1);
+  }
+
+  .field input {
+    border: 0;
+    background: transparent;
+    outline: none;
+    font-size: var(--text-meta);
+    color: var(--color-primary);
+    width: 100%;
+    min-width: 0;
+  }
+
+  .field input::placeholder {
+    color: var(--color-faint);
+  }
+
+  /* Chrome draws its own blue clear button with a default cursor. Replace it with a mask we can
+     colour from the tokens, so it matches the accent and behaves like a button. */
+  .field input[type="search"]::-webkit-search-cancel-button {
+    -webkit-appearance: none;
+    appearance: none;
+    height: 0.875rem;
+    width: 0.875rem;
+    cursor: pointer;
+    background-color: var(--color-faint);
+    -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path d='M4 4l8 8M12 4l-8 8' stroke='black' stroke-width='2.2' stroke-linecap='round'/></svg>");
+    mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path d='M4 4l8 8M12 4l-8 8' stroke='black' stroke-width='2.2' stroke-linecap='round'/></svg>");
+    -webkit-mask-size: contain;
+    mask-size: contain;
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    transition: background-color 0.15s ease;
+  }
+
+  .field input[type="search"]::-webkit-search-cancel-button:hover {
+    background-color: var(--color-accent);
+  }
+
+  /* Firefox has no cancel button, so nothing to override there. */
+
+  /* A status chip: tinted background, coloured text, never colour alone. */
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    font-size: var(--text-micro);
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 0.25rem 0.5rem;
+    border-radius: 999px;
+    line-height: 1;
+  }
+
+}
+
+/* ============================================================================
+   Leaflet. A dark basemap from CARTO, so the map is genuinely neutral rather
+   than a colour-filtered version of the bright OSM tiles.
+   ============================================================================ */
+.leaflet-container {
+  background: var(--color-water);
+  font-family: var(--font-sans);
+}
+
+.leaflet-control-attribution {
+  background: color-mix(in srgb, var(--color-panel) 86%, transparent) !important;
+  color: var(--color-faint) !important;
+  font-size: 10px !important;
+  padding: 2px 6px !important;
+  border-top-left-radius: 6px;
+}
+
+.leaflet-control-attribution a {
+  color: var(--color-secondary) !important;
+}
+
+.leaflet-bar,
+.leaflet-bar a {
+  background: var(--color-panel) !important;
+  color: var(--color-secondary) !important;
+  border-color: var(--color-edge) !important;
+}
+
+.leaflet-bar a:hover {
+  background: var(--color-inset) !important;
+  color: var(--color-primary) !important;
+}
+
+/* ============================================================================
+   The breaking wave loader. One wave, breaking on a loop: the face lifts, the
+   lip pitches over the hollow, whitewater blooms, then it washes out.
+   ============================================================================ */
+@keyframes wave-lift {
+  0%,
+  100% {
+    transform: translateY(2px);
+  }
+  45% {
+    transform: translateY(-1px);
+  }
+}
+
+/* The lip starts upright, throws forward over the hollow, then collapses. */
+@keyframes wave-throw {
+  0%,
+  100% {
+    transform: rotate(-7deg) translate(-2px, 4px) scale(0.93);
+  }
+  35% {
+    transform: rotate(0deg) translate(0, 0) scale(1);
+  }
+  65% {
+    transform: rotate(6deg) translate(2px, 1px) scale(1.02);
+  }
+}
+
+/* Whitewater blooms as the lip lands. */
+@keyframes wave-break {
+  0%,
+  45% {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  65% {
+    opacity: 0.95;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.25);
+  }
+}
+
+@keyframes wave-spray {
+  0%,
+  35% {
+    opacity: 0;
+    transform: translate(0, 0);
+  }
+  55% {
+    opacity: 0.9;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(12px, -9px);
+  }
+}
+
+.wave {
+  overflow: visible;
+}
+
+.wave .wave-shoulder {
+  stroke: color-mix(in srgb, var(--color-accent) 30%, var(--color-inset));
+  transform-origin: 62px 47px;
+  animation: wave-lift 2.2s ease-in-out infinite;
+}
+
+.wave .wave-curl {
+  stroke: var(--color-accent);
+  fill: none;
+  transform-origin: 24px 42px;
+  animation: wave-throw 2.2s ease-in-out infinite;
+}
+
+.wave .wave-white {
+  fill: color-mix(in srgb, var(--color-panel) 72%, var(--color-accent));
+  transform-origin: 44px 42px;
+  animation: wave-break 2.2s ease-out infinite;
+}
+
+.wave .wave-foam {
+  fill: var(--color-accent);
+  animation: wave-spray 2.2s ease-out infinite;
+}
+
+.wave .wave-foam-2 {
+  animation-delay: 0.12s;
+}
+
+.wave .wave-foam-3 {
+  animation-delay: 0.24s;
+}
+
+/* Motion reduced: hold the wave at the moment it pitches, so the shape still reads. */
+@media (prefers-reduced-motion: reduce) {
+  .wave .wave-shoulder,
+  .wave .wave-curl,
+  .wave .wave-white,
+  .wave .wave-foam {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ============================================================================
+   Signature details. Each earns its place: the radar comes from the logo, the
+   pin pulse marks the selection, the row and pin link answers "which one is
+   that". Amplitudes are deliberately small so four of them can coexist.
+   ============================================================================ */
+
+/* The radar in the wordmark's O pings outward: outer arc first, inner arc last. */
+@keyframes radar-ping {
+  0%,
+  55%,
+  100% {
+    opacity: 0.55;
+  }
+  20% {
+    opacity: 1;
+  }
+}
+
+/* The rings turn as one, so they stay concentric and the gaps sweep like a radar. fill-box means
+   the origin is the mark's own centre, with no need to know its coordinates in the wordmark. */
+@keyframes radar-sweep {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.wordmark .radar {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: radar-sweep 9s linear infinite;
+}
+
+/* Waiting on data spins the sweep up, so the mark says "working". */
+.wordmark.is-pinging .radar {
+  animation-duration: 2.2s;
+}
+
+.wordmark .radar-arc {
+  animation: radar-ping 3.6s ease-in-out infinite;
+}
+
+.wordmark .radar-arc-2 {
+  animation-delay: 0.22s;
+}
+
+.wordmark .radar-arc-3 {
+  animation-delay: 0.44s;
+}
+
+/* While the app is fetching, the ping speeds up and reaches full contrast. */
+.wordmark.is-pinging .radar-arc {
+  animation-duration: 1.5s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wordmark .radar,
+  .wordmark .radar-arc {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* A radar ring expanding off the selected pin. Lives on the Leaflet divIcon. */
+@keyframes pin-ping {
+  0% {
+    opacity: 0.55;
+    transform: scale(0.65);
+  }
+  70% {
+    opacity: 0;
+    transform: scale(2.1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(2.1);
+  }
+}
+
+.pin-ping {
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  border: 2px solid var(--color-accent);
+  animation: pin-ping 2.4s ease-out infinite;
+  pointer-events: none;
+}
+
+/* A hovered pin lifts, matching the row hover in the list. */
+.pin-shape {
+  transition:
+    transform 0.16s ease,
+    box-shadow 0.16s ease;
+}
+
+.pin-hovered .pin-shape {
+  transform: translateY(-3px) scale(1.08);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pin-ping {
+    animation: none;
+    opacity: 0.4;
+  }
+
+  .pin-shape {
+    transition: none;
+  }
+}
+
+/* The row a hovered pin corresponds to, so the link reads in both directions. */
+.row-card.is-linked {
+  border-color: var(--color-edge);
+  box-shadow: var(--shadow-2);
+}

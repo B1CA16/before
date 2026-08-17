@@ -14,6 +14,18 @@ class SpotOut(BaseModel):
     orientation_deg: float | None
 
 
+class ScoreOut(BaseModel):
+    slug: str
+    score: float | None
+    swell_height_m: float | None
+    swell_period_s: float | None
+    wind_speed_kmh: float | None
+    offshore_component: float | None
+    # The raw bearings, so the UI can draw the geometry the score is built from.
+    swell_direction_deg: float | None
+    wind_direction_deg: float | None
+
+
 class ForecastHour(BaseModel):
     observed_at: datetime
     score: float | None
