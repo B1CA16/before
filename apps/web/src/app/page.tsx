@@ -3,6 +3,7 @@
 import dynamic from "next/dynamic";
 import { useEffect, useMemo, useState } from "react";
 
+import AuthMenu from "@/components/AuthMenu";
 import Chip from "@/components/Chip";
 import RankedList from "@/components/RankedList";
 import SpotDetail from "@/components/SpotDetail";
@@ -32,8 +33,9 @@ function TopBar({
 }) {
   return (
     <header className="z-[1000] flex h-16 flex-none items-center gap-3 border-b border-hairline bg-panel px-4 shadow-[var(--shadow-1)]">
-      {/* Inlined so the radar in the O can ping, faster while data is in flight. */}
-      <Wordmark className="h-8 w-auto" pinging={loading} />
+      {/* Inlined so the radar in the O can ping, faster while data is in flight. flex-none because
+          otherwise the bar's other controls shrink the logo instead of themselves. */}
+      <Wordmark className="h-8 w-auto flex-none" pinging={loading} />
 
       <label className="field ml-2 w-full max-w-64" aria-label="Search spots">
         <svg width="13" height="13" viewBox="0 0 16 16" aria-hidden className="flex-none opacity-50">
@@ -50,7 +52,7 @@ function TopBar({
 
       <div className="ml-auto flex items-center gap-2">
         <span className="pill hidden md:inline-flex">Lisbon coast</span>
-        <span className="pill hidden md:inline-flex">
+        <span className="pill hidden lg:inline-flex">
           <span
             className="h-1.5 w-1.5 rounded-full"
             style={{ background: "var(--color-accent)" }}
@@ -58,6 +60,7 @@ function TopBar({
           />
           Updated 06:00
         </span>
+        <AuthMenu />
       </div>
     </header>
   );

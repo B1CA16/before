@@ -79,6 +79,17 @@ body {
   outline-offset: 2px;
 }
 
+/* An input inside .field is visually part of the pill, and .field:focus-within already shows the
+   focus state on its behalf. Without this, the global ring above draws a hard rectangle inside the
+   rounded pill, because an outline follows its own element's border-radius and a bare input has
+   none.
+   Deliberately unlayered: rules inside @layer components lose to unlayered rules no matter how
+   specific they are, so `.field input { outline: none }` in the components layer cannot win here.
+   Same cascade-layer trap that let .pill override Tailwind's .hidden. */
+.field input:focus-visible {
+  outline: none;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -267,9 +278,11 @@ body {
   }
 
   .field:focus-within {
-    border-color: var(--color-edge);
+    /* The pill itself is the focus indicator now that the input's own ring is suppressed, so it
+       uses the accent and a soft halo rather than a barely-there border shift. */
+    border-color: var(--color-accent);
     background: var(--color-panel);
-    box-shadow: var(--shadow-1);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent) 16%, transparent);
   }
 
   .field input {
@@ -322,6 +335,84 @@ body {
     padding: 0.25rem 0.5rem;
     border-radius: 999px;
     line-height: 1;
+  }
+
+  /* Buttons. Defined here rather than assembled from utilities at each call site, so every action
+     in the app shares one shape, one motion and one disabled treatment. Tap targets are at least
+     40px tall because this gets used one-handed, outdoors, in a hurry. */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 2.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: 999px;
+    border: 1px solid transparent;
+    font-size: var(--text-meta);
+    font-weight: 600;
+    line-height: 1;
+    white-space: nowrap;
+    cursor: pointer;
+    transition:
+      background-color 0.15s ease,
+      border-color 0.15s ease,
+      box-shadow 0.15s ease,
+      transform 0.15s ease;
+  }
+  .btn:active {
+    transform: translateY(1px);
+  }
+  .btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+    transform: none;
+  }
+
+  .btn-primary {
+    background: var(--color-accent);
+    color: #fff;
+    box-shadow: var(--shadow-1);
+  }
+  .btn-primary:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--color-accent) 88%, black);
+  }
+
+  .btn-quiet {
+    background: var(--color-inset);
+    border-color: var(--color-hairline);
+    color: var(--color-secondary);
+  }
+  .btn-quiet:hover:not(:disabled) {
+    border-color: var(--color-edge);
+    color: var(--color-primary);
+  }
+
+  /* A round icon-only trigger, sized to match .pill so they sit level in the top bar. */
+  .btn-avatar {
+    display: inline-grid;
+    place-items: center;
+    height: 2.125rem;
+    width: 2.125rem;
+    flex: none;
+    border-radius: 999px;
+    border: 1px solid var(--color-hairline);
+    background: var(--color-inset);
+    color: var(--color-secondary);
+    font-size: var(--text-meta);
+    font-weight: 700;
+    cursor: pointer;
+    transition:
+      border-color 0.15s ease,
+      color 0.15s ease;
+  }
+  .btn-avatar:hover {
+    border-color: var(--color-edge);
+    color: var(--color-primary);
+  }
+  .btn-avatar[aria-expanded="true"] {
+    border-color: var(--color-accent);
+    color: var(--color-primary);
   }
 
 }

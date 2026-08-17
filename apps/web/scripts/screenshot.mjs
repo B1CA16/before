@@ -82,6 +82,18 @@ for (const vp of VIEWPORTS) {
     }
   }
 
+  // The sign-in popover is closed by default, so it needs opening to be seen at all. Captured on
+  // mobile too, because the top bar is tightest there and that is where it would overflow.
+  if (vp.name === "laptop" || vp.name === "mobile") {
+    const signIn = page.getByRole("button", { name: /^sign in$/i }).first();
+    if (await signIn.count()) {
+      await signIn.click().catch(() => {});
+      await page.waitForTimeout(500);
+      await page.screenshot({ path: `${OUT}/${vp.name}-signin.png` });
+      await page.keyboard.press("Escape");
+    }
+  }
+
   await page.close();
 }
 

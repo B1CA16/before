@@ -11,6 +11,7 @@
     "shots": "node scripts/screenshot.mjs"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.112.3",
     "leaflet": "^1.9.4",
     "next": "16.2.12",
     "react": "19.2.4",
@@ -26,9 +27,9 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.2.12",
+    "playwright": "^1.49.0",
     "tailwindcss": "^4",
     "typescript": "^5",
-    "vitest": "^4.1.10",
-    "playwright": "^1.49.0"
+    "vitest": "^4.1.10"
   }
 }

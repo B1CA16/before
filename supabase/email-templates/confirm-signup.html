@@ -1,0 +1,96 @@
+<!--
+  beFORE confirmation code, for a brand new account.
+  Supabase dashboard: Authentication > Emails > Templates > Confirm signup.
+  Suggested subject: Your beFORE sign-in code
+
+  Same design as magic-link.html on purpose: a returning user and a new one should not receive
+  visually different emails from the same product. Only the wording differs, because this is the
+  first thing a new account holder ever sees from us and it should say what the account is for.
+
+  Email clients are not browsers. Everything here is deliberate:
+   - Tables for layout, because float and flex are unreliable in Outlook.
+   - Inline styles only, because <style> blocks get stripped by several clients including Gmail's
+     web app in some configurations.
+   - No SVG. Our logo files are SVG and every major client (Gmail, Outlook, Yahoo) strips it, so the
+     wordmark here is a PNG rasterised from public/before_logo_text.svg. Regenerate it if the logo
+     changes; the README says how.
+   - That PNG is served by the web app, and emails outlive deployments. The path must never be
+     renamed or deleted, or the logo breaks retroactively in every email already sitting in an
+     inbox. Alt text carries the wordmark for clients that block remote images.
+   - A system font stack rather than Plus Jakarta Sans, since webfonts do not load in most clients.
+     The app's typeface cannot survive here, so the brand carries through colour and shape instead.
+-->
+<div style="margin:0;padding:0;background:#f4f6f8;">
+  <!-- Inbox preview line. Kept free of the code itself, so the digits are not sitting in a phone
+       notification on a lock screen. -->
+  <div style="display:none;max-height:0;overflow:hidden;opacity:0;">
+    Confirm your email and start logging surf sessions.
+  </div>
+
+  <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"
+         style="background:#f4f6f8;padding:32px 16px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="480"
+               style="width:480px;max-width:100%;">
+
+          <!-- Wordmark -->
+          <tr>
+            <td align="left" style="padding:0 4px 20px 4px;">
+              <img src="https://before-steel.vercel.app/before_wordmark_email.png"
+                   width="108" height="40" alt="beFORE"
+                   style="display:block;width:108px;height:40px;border:0;outline:none;text-decoration:none;" />
+            </td>
+          </tr>
+
+          <!-- Card -->
+          <tr>
+            <td style="background:#ffffff;border:1px solid #e5e8ed;border-radius:18px;padding:32px 28px;">
+              <h1 style="margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+                         font-size:20px;line-height:1.3;font-weight:700;color:#101828;">
+                Confirm your email
+              </h1>
+              <p style="margin:10px 0 0 0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+                        font-size:14px;line-height:1.55;color:#4a5567;">
+                Enter this code in beFORE to confirm your address and finish signing up. It is
+                valid for one hour and can be used once.
+              </p>
+
+              <!-- The code -->
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"
+                     style="margin:22px 0 0 0;">
+                <tr>
+                  <td align="center"
+                      style="background:#f2f4f7;border:1px solid #e5e8ed;border-radius:12px;padding:18px 12px;">
+                    <span style="font-family:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace;
+                                 font-size:30px;font-weight:700;letter-spacing:0.28em;color:#101828;">{{ .Token }}</span>
+                  </td>
+                </tr>
+              </table>
+
+              <p style="margin:22px 0 0 0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+                        font-size:13px;line-height:1.55;color:#98a2b3;">
+                Once you are in, you can log the sessions you surf and rate them. Those ratings are
+                private to your account, and they are what teaches beFORE what good surf looks like.
+                <br /><br />
+                If you did not sign up, you can ignore this email and no account will be created.
+              </p>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td align="left" style="padding:18px 4px 0 4px;">
+              <p style="margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+                        font-size:12px;line-height:1.5;color:#98a2b3;">
+                beFORE, surf intelligence for the Lisbon coast.<br />
+                Sent to {{ .Email }} because someone entered it on the sign-up screen.
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</div>
