@@ -1,8 +1,15 @@
-"""HeuristicScorer: transparent v0 BeFORE score from EDA-calibrated sub-scores.
+"""HeuristicScorer: transparent v0 BeFORE score from calibrated sub-scores.
 
-Sub-scores in [0,1] are combined by geometric mean (x10). Geometric mean is conjunctive:
-any near-zero factor (shadowed spot, strong onshore, no size) vetoes the score, while
-good-all-round conditions score high. NaN propagates (unknown orientation -> unknown score).
+Sub-scores in [0,1] are combined by their HARMONIC mean (x10). Like the geometric mean it is
+conjunctive, so any factor at zero still vetoes the whole score (a shadowed spot really does get
+no waves), but it punishes a weak link far harder. That matters: with four factors a geometric
+mean takes a fourth root, so a 0.2 period factor beside three 0.9s still scored about 6.2, which
+is far too generous. The harmonic mean returns 3.7 for the same conditions.
+
+NaN propagates, so a spot with unknown orientation reports an unknown score rather than a guess.
+
+Combination and ramps were chosen against a year of archive data; see
+ml/notebooks/calibrate_heuristic.py for the comparison and the distributions.
 """
 
 import numpy as np
@@ -16,10 +23,10 @@ class HeuristicScorer(Scorer):
     def __init__(
         self,
         *,
-        min_period_s: float = 6.0,
-        good_period_s: float = 12.0,
-        min_height_m: float = 0.3,
-        good_height_m: float = 1.5,
+        min_period_s: float = 3.0,
+        good_period_s: float = 13.0,
+        min_height_m: float = 0.2,
+        good_height_m: float = 1.6,
         strong_wind_kmh: float = 30.0,
     ):
         self.min_period_s = min_period_s
@@ -42,10 +49,11 @@ class HeuristicScorer(Scorer):
 
     def score(self, features: pd.DataFrame) -> pd.Series:
         sub = self._sub_scores(features)
-        # geometric mean = exp(mean(log)); log(0) -> -inf -> exp -> 0 (veto); NaN propagates.
+        # Harmonic mean: n / sum(1/x). A zero factor makes one term infinite, so the mean goes to
+        # zero and the veto survives. NaN propagates untouched.
         with np.errstate(divide="ignore"):
-            log_mean = sum(np.log(s) for s in sub.values()) / len(sub)
-        return 10.0 * np.exp(log_mean)
+            reciprocal_sum = sum(1.0 / s for s in sub.values())
+        return 10.0 * len(sub) / reciprocal_sum
 
     def explain(self, features: pd.DataFrame) -> pd.DataFrame:
         sub = self._sub_scores(features)

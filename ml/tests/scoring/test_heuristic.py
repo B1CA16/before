@@ -59,6 +59,46 @@ def test_score_in_range_and_nan_propagates():
     assert np.isnan(scores.iloc[1])
 
 
+def test_poor_conditions_stay_ranked_rather_than_collapsing():
+    """The bug this guards against: on 2026-08-17 every scored spot on the coast read exactly 0.0.
+
+    A 5.7 s swell fell below the old 6 s period floor, and the conjunctive mean turned that single
+    zero into a zero overall, so 85 spots shared one value and the ranking carried no information.
+    Poor conditions must score low but remain ordered.
+    """
+    poor = _row(
+        swell_height_m=1.4,
+        swell_period_s=5.7,
+        offshore_component=-0.26,
+        wind_speed_kmh=2.8,
+        swell_exposure=0.26,
+    )
+    worse = _row(
+        swell_height_m=1.0,
+        swell_period_s=5.0,
+        offshore_component=-0.26,
+        wind_speed_kmh=2.8,
+        swell_exposure=0.26,
+    )
+    scorer = HeuristicScorer()
+    poor_score = scorer.score(poor).iloc[0]
+    worse_score = scorer.score(worse).iloc[0]
+
+    assert poor_score > 0, "a surfable but poor day must not read as a hard zero"
+    assert poor_score < 6, "and it must not read as decent either"
+    assert worse_score < poor_score, "worse conditions must rank below poor ones"
+
+
+def test_a_true_veto_still_returns_zero():
+    """Softening the floors must not cost us the genuine vetoes."""
+    scorer = HeuristicScorer()
+    # A beach facing away from the swell receives no energy at all.
+    assert scorer.score(_row(swell_exposure=0.0)).iloc[0] == 0.0
+    # A gale straight onshore ruins any swell.
+    blown_out = _row(offshore_component=-1.0, wind_speed_kmh=45.0)
+    assert scorer.score(blown_out).iloc[0] == 0.0
+
+
 def test_explain_returns_factor_breakdown():
     out = HeuristicScorer().explain(_row())
     assert list(out.columns) == ["size", "period", "wind", "exposure", "score"]
