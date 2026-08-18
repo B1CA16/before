@@ -21,6 +21,24 @@ class Settings(BaseSettings):
     weather_forecast_url: str = "https://api.open-meteo.com/v1/forecast"
     weather_archive_url: str = "https://archive-api.open-meteo.com/v1/archive"
 
+    @property
+    def supabase_auth_issuer(self) -> str:
+        """The `iss` claim Supabase puts in the access tokens it issues."""
+        if not self.supabase_project_ref:
+            raise RuntimeError("SUPABASE_PROJECT_REF is required to verify access tokens")
+        return f"https://{self.supabase_project_ref}.supabase.co/auth/v1"
+
+    @property
+    def supabase_jwks_url(self) -> str:
+        """Where Supabase publishes the PUBLIC keys its tokens are signed with.
+
+        Note what is absent here: any shared secret. Supabase signs with ES256, so this service
+        holds only a verification key and could not forge a token even if its whole env leaked.
+        Under the older HS256 scheme one secret both signs and verifies, which makes a leak of the
+        API's config equivalent to being able to sign in as anybody.
+        """
+        return f"{self.supabase_auth_issuer}/.well-known/jwks.json"
+
 
 def get_settings() -> Settings:
     return Settings()

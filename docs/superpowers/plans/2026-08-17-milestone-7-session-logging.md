@@ -6,14 +6,16 @@
 and those ratings become the supervised labels M8 trains on. Ends with a training-set builder that
 reports how many usable labels exist, so "are we ready for ML" becomes a measured question.
 
-**Architecture:** A `sessions` table keyed to `auth.users` and `spots`. Auth is Supabase magic links,
-handled in the browser by `supabase-js`. Writes and reads of sessions go through FastAPI, which
-verifies the Supabase JWT and scopes every query to the caller. Labels are never denormalised: a
+**Architecture:** A `surf_sessions` table keyed to `auth.users` and `spots`. Auth is Google OAuth via
+`supabase-js` in the browser (see ADR-0005; email sign-in was built first and could not send, because
+no free provider will deliver without a sender domain). Writes and reads of sessions go through
+FastAPI, which verifies the Supabase JWT against the project's JWKS and scopes every query to the
+caller. Labels are never denormalised: a
 session stores only *when and where*, and features are joined from the existing `conditions` table at
 training time, preferring `source = 'archive'` (what happened) over `'forecast'` (what was predicted).
 
-**Tech Stack:** Postgres/RLS via Supabase CLI migrations, `supabase-js` in Next.js, `python-jose` (or
-`pyjwt`) for JWT verification in FastAPI, existing `before_surf` package for the training-set builder.
+**Tech Stack:** Postgres/RLS via Supabase CLI migrations, `supabase-js` in Next.js, `pyjwt[crypto]`
+for ES256/JWKS verification in FastAPI, existing `before_surf` package for the training-set builder.
 
 ## Global Constraints
 
@@ -38,8 +40,11 @@ training time, preferring `source = 'archive'` (what happened) over `'forecast'`
   labels and ~8. Label volume, not model choice, is the binding constraint on this project.
 - **Open signup, private data.** Anyone may sign up; RLS scopes rows to their owner. Same build effort
   as single-user, and a few friends logging multiplies the label rate.
-- **Auth: Supabase magic links.** No password storage, fewest moving parts, less personal data to
-  defend under GDPR.
+- **Auth: Google OAuth** (revised 2026-08-18, ADR-0005). A 6-digit email code was built first and
+  works, but no free mail provider will send without a verified sender domain, which this project does
+  not have. Google needs no email at all and still gives a verified address. The email path is kept
+  dormant behind `NEXT_PUBLIC_EMAIL_SIGNIN`. Table renamed `surf_sessions`, because Supabase already
+  ships `auth.sessions` and one word should not mean two things.
 - **Sessions are joined to conditions, not snapshotted.** The `conditions` table already carries both
   `forecast` and `archive` rows per `(spot_id, observed_at)`, so the join can prefer ground truth with
   no new columns. Conditions are hourly, so a session at 07:23 joins to the 07:00 row via
@@ -63,9 +68,9 @@ training time, preferring `source = 'archive'` (what happened) over `'forecast'`
 
 ### Task 1: `sessions` schema and RLS
 
-- [ ] Create migration `create_sessions` via Supabase CLI (do not hand-name the timestamp):
+- [x] Create migration `create_sessions` via Supabase CLI (do not hand-name the timestamp):
       `npx supabase migration new create_sessions`
-- [ ] Columns, deliberately minimal:
+- [x] Columns, deliberately minimal:
       `id bigint generated always as identity primary key`,
       `user_id uuid not null references auth.users(id) on delete cascade`,
       `spot_id bigint not null references spots(id) on delete cascade`,
@@ -74,52 +79,60 @@ training time, preferring `source = 'archive'` (what happened) over `'forecast'`
       `tags text[] not null default '{}'`,
       `note text`,
       `created_at timestamptz not null default now()`
-- [ ] Constrain tags to the known vocabulary so typos cannot fragment the data:
+- [x] Constrain tags to the known vocabulary so typos cannot fragment the data:
       `check (tags <@ array['crowded','too_small','too_big','blown_out','good_shape']::text[])`
-- [ ] `unique (user_id, spot_id, surfed_at)` so a double-submit updates rather than duplicates,
+- [x] `unique (user_id, spot_id, surfed_at)` so a double-submit updates rather than duplicates,
       matching the ingestion pipeline's PUT-not-POST idempotency.
-- [ ] Index `sessions (spot_id, surfed_at)` for the training-set join.
-- [ ] `on delete cascade` from `auth.users` is the GDPR erasure path: deleting the account deletes the
+- [x] Index `sessions (spot_id, surfed_at)` for the training-set join.
+- [x] `on delete cascade` from `auth.users` is the GDPR erasure path: deleting the account deletes the
       sessions. Note this in the migration comment.
-- [ ] Enable RLS and add owner-scoped policies for select/insert/update/delete
+- [x] Enable RLS and add owner-scoped policies for select/insert/update/delete
       (`user_id = auth.uid()`), unlike `spots` which has RLS with no policies.
-- [ ] Note in a comment that `surfed_at <= now()` cannot be a CHECK constraint, because CHECK
+- [x] Note in a comment that `surfed_at <= now()` cannot be a CHECK constraint, because CHECK
       requires immutable expressions. The API enforces it instead.
-- [ ] Apply with `npx supabase db push` and verify the table and policies exist.
-- [ ] **Commit:** `feat: add sessions table with owner-scoped RLS`
+- [x] Apply with `npx supabase db push` and verify the table and policies exist.
+- [x] **Commit:** `feat: add sessions table with owner-scoped RLS`
 
 ### Task 2: Supabase auth in the web app
 
-- [ ] Add `@supabase/supabase-js` to `apps/web`.
-- [ ] Add `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` to `.env.local` and to
+- [x] Add `@supabase/supabase-js` to `apps/web`.
+- [x] Add `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` to `.env.local` and to
       Vercel. Remember `NEXT_PUBLIC_*` is inlined at build time, so Vercel needs a redeploy.
-- [ ] Confirm the anon key is safe to expose (it is: it grants only what RLS allows) and that the
+- [x] Confirm the anon key is safe to expose (it is: it grants only what RLS allows) and that the
       service-role key is never used in the frontend. State this in the code comment.
-- [ ] Create a typed browser client and a small `useSession` hook exposing `{user, loading}`.
-- [ ] Sign-in UI: an email field that calls `signInWithOtp`, plus an "check your inbox" state. Add a
+- [x] Create a typed browser client and a small `useSession` hook exposing `{user, loading}`.
+- [x] Sign-in UI: an email field that calls `signInWithOtp`, plus an "check your inbox" state. Add a
       sign-out control. Keep it inside the existing design system (`.panel`, `.field`, `.pill`).
-- [ ] Derive auth state, never sync it into effects (the `react-hooks/set-state-in-effect` rule bit
+- [x] Derive auth state, never sync it into effects (the `react-hooks/set-state-in-effect` rule bit
       us twice in M6).
-- [ ] Verify: sign in end to end on localhost, confirm the JWT is present, then `npm run shots` to
+- [x] Verify: sign in end to end on localhost, confirm the JWT is present, then `npm run shots` to
       check the signed-in and signed-out states render.
-- [ ] **Commit:** `feat: add supabase magic-link auth to the web app`
+- [x] **Commit:** `feat: add supabase magic-link auth to the web app`
 
 ### Task 3: JWT verification and session endpoints in FastAPI
 
-- [ ] Add a JWT dependency that verifies the Supabase access token from the `Authorization: Bearer`
-      header, using the project JWT secret from config (`SUPABASE_JWT_SECRET`, `sync: false` on
-      Render). Verify signature, `exp`, and audience. Return the `sub` claim as the user id.
-- [ ] Reject unverified or expired tokens with 401. Add a test for each failure mode: missing header,
-      malformed token, wrong signature, expired token. Verification without these tests is decoration.
-- [ ] `POST /sessions`: body `{slug, surfed_at, rating, tags, note}`. Reject `surfed_at` in the future
+> **Revised during implementation.** The plan said to verify with a shared `SUPABASE_JWT_SECRET`,
+> which is the HS256 model. This project's tokens are actually signed with **ES256** and it publishes
+> a JWKS, so verification uses the public key instead. Strictly better and simpler to operate: the API
+> holds nothing that could mint a token, so leaking its whole environment does not let anyone sign in
+> as another user, and there is no secret to rotate. Key rotation is handled by `kid` lookup. The only
+> config needed is `SUPABASE_PROJECT_REF`, which is not a secret and is committed in `render.yaml`.
+
+- [x] Add a JWT dependency that verifies the Supabase access token from the `Authorization: Bearer`
+      header against the project's JWKS. Verify signature, `exp`, audience and issuer, with the
+      algorithm pinned to ES256. Return the `sub` claim as the user id.
+- [x] Reject unverified or expired tokens with 401. Add a test for each failure mode: missing header,
+      malformed token, wrong signature, expired token, wrong audience, wrong issuer, unknown key id,
+      `alg=none`, and a token with no expiry. Verification without these tests is decoration.
+- [x] `POST /sessions`: body `{slug, surfed_at, rating, tags, note}`. Reject `surfed_at` in the future
       (400) and unknown tags (422 via the schema). Upsert on the natural key so re-submitting edits.
-- [ ] `GET /sessions`: the caller's own sessions, newest first, joined to spot name.
-- [ ] `DELETE /sessions/{id}`: scoped to the caller, 404 (not 403) if it belongs to someone else, so
+- [x] `GET /sessions`: the caller's own sessions, newest first, joined to spot name.
+- [x] `DELETE /sessions/{id}`: scoped to the caller, 404 (not 403) if it belongs to someone else, so
       the endpoint does not confirm the existence of other users' rows.
-- [ ] Every query filters on the authenticated user id. Add a test that user A cannot read, edit or
+- [x] Every query filters on the authenticated user id. Add a test that user A cannot read, edit or
       delete user B's session, since the owner connection bypasses RLS and this filter is the only
       real control.
-- [ ] Extend CORS `allow_methods` beyond `GET` to include `POST`, `DELETE` and `OPTIONS`.
+- [x] Extend CORS `allow_methods` beyond `GET` to include `POST`, `DELETE` and `OPTIONS`.
 - [ ] **Commit:** `feat: add authenticated session endpoints`
 
 ### Task 4: the log-a-session flow

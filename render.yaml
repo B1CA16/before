@@ -23,3 +23,9 @@ services:
       # Set once the Vercel domain exists, e.g. https://before.vercel.app
       - key: ALLOWED_ORIGINS
         sync: false
+      # Used to build the JWKS URL and the expected token issuer, so the API can verify who is
+      # calling. Committed rather than set in the dashboard because it is not a secret: this ref is
+      # already public in the frontend's Supabase URL. Note there is no JWT secret here at all,
+      # because Supabase signs with ES256 and we only ever need its public key.
+      - key: SUPABASE_PROJECT_REF
+        value: qcehklvhjapiekqqdmjq

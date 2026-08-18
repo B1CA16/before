@@ -6,6 +6,9 @@ requires-python = ">=3.12"
 dependencies = [
     "before-surf",
     "fastapi[standard]",
+    # [crypto] pulls in `cryptography`, needed for ES256. Supabase signs with an elliptic-curve key,
+    # not a shared secret, so we verify against its published public key.
+    "pyjwt[crypto]>=2.10.1",
 ]
 
 [tool.uv.sources]
