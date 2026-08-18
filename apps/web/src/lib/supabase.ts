@@ -26,16 +26,18 @@ export const supabase: SupabaseClient | null =
   url && publishableKey
     ? createClient(url, publishableKey, {
         auth: {
-          // We sign in with a 6-digit code, so no token should ever ride in a URL. Turning off URL
-          // detection makes that structural rather than a convention: even if a stale magic link
-          // from the old flow is opened, its fragment is ignored instead of establishing a session.
+          // PKCE is the important setting, not an optional hardening. Under it, everything that
+          // comes back in a URL is a single-use authorization code that is worthless without the
+          // verifier held in this browser's storage.
           //
-          // The flow this replaces put the access AND refresh token in the address bar, where they
-          // reach browser history and get pasted into chats.
-          detectSessionInUrl: false,
-          // Only matters if link-based sign-in is ever reintroduced, in which case the link carries
-          // a single-use code that is worthless without the verifier held in this browser.
+          // The flow this replaced was implicit, which put the access AND refresh token directly in
+          // the address bar, where they land in history and get pasted into chats. A refresh token
+          // is the worse half of that: it mints new access tokens until someone revokes it.
           flowType: "pkce",
+          // Required by the Google redirect, which returns to the app carrying ?code=. Safe only
+          // because of flowType above: with implicit flow this same setting is what consumes tokens
+          // out of the URL fragment.
+          detectSessionInUrl: true,
         },
       })
     : null;

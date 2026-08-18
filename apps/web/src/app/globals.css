@@ -388,6 +388,20 @@ body {
     color: var(--color-primary);
   }
 
+  /* Google requires its mark to sit on white, so this button earns its prominence from elevation
+     rather than from our accent colour. It reads as the primary action without repainting a logo we
+     are not allowed to restyle. */
+  .btn-google {
+    background: #fff;
+    border-color: var(--color-edge);
+    color: var(--color-primary);
+    font-weight: 600;
+    box-shadow: var(--shadow-1);
+  }
+  .btn-google:hover:not(:disabled) {
+    box-shadow: var(--shadow-2);
+  }
+
   /* A round icon-only trigger, sized to match .pill so they sit level in the top bar. */
   .btn-avatar {
     display: inline-grid;

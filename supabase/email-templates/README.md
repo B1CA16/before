@@ -1,8 +1,13 @@
 # Auth email templates
 
-The emails Supabase sends when someone signs in. Kept in the repo because they are product surface:
-they are the first thing a new user sees, and a design that only exists pasted into a dashboard field
-is a design nobody can review or restore.
+> **Status: not in use.** The app signs in with Google, so no auth email is sent at all. See
+> `docs/adr/0005-google-sign-in-instead-of-email.md`. These templates are finished and correct; the
+> only missing piece is a domain to send from. Everything below applies from the moment one exists,
+> at which point setting `NEXT_PUBLIC_EMAIL_SIGNIN=1` re-enables the email option in the UI.
+
+The emails Supabase sends when someone signs in with a code. Kept in the repo because they are product
+surface: they are the first thing a new user sees, and a design that only exists pasted into a
+dashboard field is a design nobody can review or restore.
 
 | File | Dashboard template | Suggested subject |
 | --- | --- | --- |
@@ -99,47 +104,62 @@ delivered **only to members of the Supabase organisation**. Every other address 
 That alone blocks inviting a few surfing friends to log sessions, which is one of the main levers for
 collecting enough labels to train on.
 
-## Provider: Brevo, because there is no custom domain yet
+## Provider: Gmail SMTP, until there is a domain
 
 Volume is not the deciding factor. A handful of people signing in occasionally is a few emails a day,
-and every free tier here is far above that. What decides it is whether a domain can be authenticated,
-because an auth code that lands in spam is the same as one that never arrived.
+and every free tier here is far above that. What decides it is **whether the provider will send at all
+without a verified domain**, and for the obvious candidates the answer is no:
 
-There is no custom domain for this project yet, which rules out the otherwise-better option: Resend's
-free tier only sends to your own address until you verify a domain with SPF and DKIM records, so it
-cannot reach anyone else's inbox.
+- **Resend** only delivers to your own account address until a domain is verified with SPF and DKIM,
+  so it cannot reach anyone else's inbox.
+- **Brevo** requires manual account approval before transactional SMTP is enabled, and will not
+  approve it until at least one domain is verified. Expect a 1 to 2 business day review. Attempting
+  to send before then fails, and Supabase surfaces that as a bare
+  `500 unexpected_failure: Error sending magic link email`.
 
-**Brevo, with a verified sender address, no domain required.** 300 emails a day, and it delivers to
-any recipient.
+Both were rejected for the same reason: there is no domain for this project yet.
 
-The trade-off to know going in: when the sending domain is not DKIM-authenticated, **Brevo rewrites
-the sender domain to `@brevosend.com`** so that Gmail and Yahoo still accept the mail. So the sender
-lands as `beFORE <something@brevosend.com>` rather than an address on our own domain. Free webmail
-addresses such as `@gmail.com` are allowed as the verified sender but are explicitly not recommended,
-precisely because they fail domain alignment and trigger this rewrite.
+**Gmail SMTP with an app password.** No domain, no approval queue, works immediately, 500 emails a day
+on a rolling 24 hours, which is far beyond anything this project will send.
 
-Measured against where we started, that is still better on every axis that matters:
+There is a neat property here that is easy to miss. Routing a `@gmail.com` sender through a third
+party like Brevo *fails* SPF and DKIM alignment, which is exactly why Brevo rewrites the sender to
+`@brevosend.com`. Sending that same address through **Google's own servers** aligns and signs
+correctly. So this path gives both better deliverability and a more honest sender address than the
+third-party route it replaces.
 
-| | Supabase built-in | Brevo, no domain |
+| | Supabase built-in | Gmail SMTP |
 | --- | --- | --- |
 | Templates editable | No | **Yes** |
 | Recipients | Supabase org members only | **Anyone** |
-| Volume | 2/hour | **300/day** |
+| Volume | 2/hour | **500/day** |
 | Inbox display name | Supabase Auth | **beFORE** |
-| Sender address | `noreply@mail.app.supabase.io` | `...@brevosend.com` |
+| Sender address | `noreply@mail.app.supabase.io` | your Gmail address |
+| SPF and DKIM | n/a | **Aligned, signed by Google** |
 
-Setup: create a Brevo account, verify a sender address, generate an SMTP key, then fill in
-Authentication > Emails > SMTP Settings with host `smtp-relay.brevo.com`, port `587`, username the
-Brevo login email, password the SMTP key. Set the sender name to `beFORE`. Then raise the per-hour cap
-under Authentication > Rate Limits, which stays at the restrictive default until changed.
+Setup. Google removed plain-password SMTP access in May 2025, so an app password is mandatory and it
+requires 2-Step Verification on the account:
+
+1. Google Account > Security > enable 2-Step Verification if it is off.
+2. Google Account > Security > App passwords > create one for Mail. It is 16 characters; paste it
+   without spaces.
+3. Supabase > Authentication > Emails > SMTP Settings: host `smtp.gmail.com`, port `587`, username
+   your full Gmail address, password the app password. **Sender email must be that same Gmail
+   address**, because Gmail refuses to send as an address the authenticated account does not own.
+   Sender name `beFORE`.
+4. Authentication > Rate Limits: raise the per-hour cap, which stays at the restrictive default.
+
+The honest limitation: the sender is a personal `@gmail.com` address, not a brand domain, and a
+personal Google account is not a production mail platform. It is entirely adequate for a portfolio
+project with a handful of users, and it is the only option here that works today.
 
 ### When a domain does appear
 
 Buying one is the only paid step this project would benefit from, and it earns its keep twice: a real
-URL for the app instead of `before-steel.vercel.app`, and a sender address that is genuinely ours.
-Switching is then just DNS records plus new SMTP credentials, with no application code touched. Free
-alternatives such as a `eu.org` subdomain exist and give real DNS control, but approval is slow and
-manual.
+URL for the app instead of `before-steel.vercel.app`, and a sender address that is genuinely ours. At
+that point Resend becomes the better choice, and switching is DNS records plus new SMTP credentials
+with no application code touched. Free alternatives such as a `eu.org` subdomain give real DNS
+control, but approval is slow and manual.
 
 ## Keeping these in sync
 

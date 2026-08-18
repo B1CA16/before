@@ -7,13 +7,46 @@ import { SCORE_COLORS } from "@/lib/score";
 import { authConfigured, supabase } from "@/lib/supabase";
 
 /**
- * Sign in with a 6-digit code, or sign out.
+ * Sign in with Google, or sign out.
  *
- * A code rather than a magic link, on purpose. A link puts credentials in a URL, and even the safer
- * PKCE variant breaks on phones whenever the mail app opens a different browser than the one that
- * requested it, because the code verifier lives in the original browser's storage. A typed code has
- * neither problem.
+ * Google rather than email, because this project has no domain, and without one no free mail
+ * provider will send on its behalf: Resend only delivers to your own address until a domain is
+ * verified, and Brevo will not enable transactional SMTP at all until one is. Google sidesteps the
+ * problem rather than working around it, since no message is ever sent, and it hands us a verified
+ * address for free. On a phone it is also one tap instead of copying a code out of an inbox.
+ *
+ * The 6-digit code flow below is kept, dormant, behind NEXT_PUBLIC_EMAIL_SIGNIN. It works and its
+ * email templates are written; the only missing piece is somewhere to send from. Enable it once a
+ * domain exists. It is deliberately off by default rather than deleted, because a sign-in option
+ * that cannot deliver its own credential is worse than no option at all.
  */
+
+// Inlined rather than fetched: Google's mark must not be restyled, and an <img> to a remote asset
+// would be a third-party request on every popover open.
+function GoogleMark() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 18 18" aria-hidden className="flex-none">
+      <path
+        fill="#4285F4"
+        d="M17.64 9.205c0-.639-.057-1.252-.164-1.841H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.259h2.909c1.702-1.567 2.683-3.874 2.683-6.615z"
+      />
+      <path
+        fill="#34A853"
+        d="M9 18c2.43 0 4.467-.806 5.957-2.18l-2.909-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z"
+      />
+      <path
+        fill="#FBBC05"
+        d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.997 8.997 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z"
+      />
+      <path
+        fill="#EA4335"
+        d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z"
+      />
+    </svg>
+  );
+}
+
+const EMAIL_SIGNIN = process.env.NEXT_PUBLIC_EMAIL_SIGNIN === "1";
 
 type Step = "email" | "code";
 
@@ -50,6 +83,19 @@ export default function AuthMenu() {
   useEffect(() => {
     if (step === "code") codeInput.current?.focus();
   }, [step]);
+
+  // Leaving for Google sets busy and deliberately never clears it, so the button does not flicker
+  // back to idle mid-redirect. The gap that leaves: abandoning the Google screen and coming back.
+  // The browser restores this page from its back/forward cache with busy frozen at true, so the
+  // button reads "Redirecting" forever. pageshow fires on that restore (and on a normal load), which
+  // makes it the right moment to let go of the latch.
+  useEffect(() => {
+    function release() {
+      setBusy(false);
+    }
+    window.addEventListener("pageshow", release);
+    return () => window.removeEventListener("pageshow", release);
+  }, []);
 
   // Close on an outside click or Escape, the two ways anyone expects a popover to go away.
   useEffect(() => {
@@ -117,6 +163,24 @@ export default function AuthMenu() {
     setOpen(false);
     setStep("email");
     setCode("");
+  }
+
+  async function signInWithGoogle() {
+    if (!supabase) return;
+    setBusy(true);
+    setError(null);
+    // Leaves the page for Google and returns to the same URL carrying ?code=, which supabase-js
+    // exchanges and then strips from the address bar. No callback route of our own is needed.
+    const { error: oauthError } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: window.location.origin },
+    });
+    if (oauthError) {
+      setError(oauthError.message);
+      setBusy(false);
+    }
+    // On success the browser navigates away, so leave busy set: clearing it would flash the button
+    // back to its idle state during the redirect.
   }
 
   async function signOut() {
@@ -219,27 +283,43 @@ export default function AuthMenu() {
             <>
               <h2 className="section-title">Sign in</h2>
               <p className="faint mt-1.5">
-                To log the sessions you surf. We email you a code, so there is no password.
+                To log the sessions you surf and rate them. They stay private to your account.
               </p>
-              <form onSubmit={sendCode} className="mt-3">
-                <label className="field" aria-label="Email address">
-                  <input
-                    type="email"
-                    required
-                    autoComplete="email"
-                    placeholder="you@example.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                  />
-                </label>
-                <button
-                  type="submit"
-                  className="btn btn-primary mt-2.5 w-full"
-                  disabled={busy || email.trim() === ""}
-                >
-                  {busy ? "Sending" : "Email me a code"}
-                </button>
-              </form>
+
+              <button
+                className="btn btn-google mt-3 w-full"
+                onClick={signInWithGoogle}
+                disabled={busy}
+              >
+                <GoogleMark />
+                {busy ? "Redirecting" : "Continue with Google"}
+              </button>
+
+              {EMAIL_SIGNIN && (
+                <>
+                  <p className="label mt-3 text-center">or</p>
+                  <form onSubmit={sendCode} className="mt-2">
+                    <label className="field" aria-label="Email address">
+                      <input
+                        type="email"
+                        required
+                        autoComplete="email"
+                        placeholder="you@example.com"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                      />
+                    </label>
+                    <button
+                      type="submit"
+                      className="btn btn-quiet mt-2.5 w-full"
+                      disabled={busy || email.trim() === ""}
+                    >
+                      {busy ? "Sending" : "Email me a code"}
+                    </button>
+                  </form>
+                </>
+              )}
+
               {error && (
                 <p className="meta mt-2" style={{ color: SCORE_COLORS.flat }} role="alert">
                   {error}
