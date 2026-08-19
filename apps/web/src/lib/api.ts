@@ -130,6 +130,10 @@ export const getMySessions = (token: string) => authed<SessionRow[]>("/sessions"
 export const deleteSession = (token: string, id: number) =>
   authed<void>(`/sessions/${id}`, token, { method: "DELETE" });
 
+/** Erase the caller's account. The server takes no id: you can only delete your own. */
+export const deleteAccount = (token: string) =>
+  authed<void>("/account", token, { method: "DELETE" });
+
 /**
  * Conditions on record for one spot at one hour. Resolves to null when we hold nothing for that
  * hour, which is a real answer worth showing: without conditions the session cannot become a

@@ -64,6 +64,7 @@ export default function Select({
   className = "",
   id,
   minWidth = 0,
+  disabled = false,
 }: {
   value: string;
   options: Option[];
@@ -75,6 +76,7 @@ export default function Select({
   id?: string;
   /** Floor for the panel width, for triggers narrower than their own content (the hour picker). */
   minWidth?: number;
+  disabled?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -127,13 +129,14 @@ export default function Select({
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-label={label}
+        disabled={disabled}
         onClick={() => setOpen((v) => !v)}
       >
         <span className="truncate">{current?.label ?? "Select"}</span>
         <Chevron />
       </button>
 
-      {open && triggerEl && (
+      {open && !disabled && triggerEl && (
         <AnchoredPanel anchorEl={triggerEl} minWidth={minWidth} onDismiss={() => setOpen(false)}>
           <div className="panel-raised p-2">
             {searchable && (

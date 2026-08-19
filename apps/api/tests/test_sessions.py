@@ -24,6 +24,7 @@ class FakeRepo:
 
     def __init__(self):
         self.rows = []
+        self.accounts = {"user-a", "user-b"}
         self._next_id = 1
 
     def get_spot(self, slug):
@@ -50,6 +51,13 @@ class FakeRepo:
 
     def list_sessions(self, user_id):
         return [r for r in self.rows if r["user_id"] == user_id]
+
+    def delete_account(self, user_id):
+        had = any(r["user_id"] == user_id for r in self.rows)
+        self.accounts.discard(user_id)
+        # Stands in for the ON DELETE CASCADE from auth.users.
+        self.rows = [r for r in self.rows if r["user_id"] != user_id]
+        return had or user_id in {"user-a", "user-b"}
 
     def delete_session(self, user_id, session_id):
         before = len(self.rows)
@@ -187,3 +195,39 @@ def test_tag_vocabulary_matches_the_database_constraint():
     assert literal, "could not find the tag vocabulary in the migration"
     in_sql = set(re.findall(r"'([a-z_]+)'", literal.group(1)))
     assert in_sql == set(SESSION_TAGS)
+
+
+# --- account erasure ------------------------------------------------------------------------------
+
+
+def test_deleting_an_account_takes_its_sessions_with_it():
+    """The GDPR erasure path.
+
+    The real cascade lives in the schema; this checks the endpoint drives it and stays scoped.
+    """
+    repo = FakeRepo()
+    _setup(repo)
+    _as("user-a").post("/sessions", json=_body())
+    _as("user-b").post("/sessions", json=_body(surfed_at=_yesterday()))
+
+    assert _as("user-a").delete("/account").status_code == 204
+    assert _as("user-a").get("/sessions").json() == []
+    # Someone else's sessions must survive it.
+    assert len(_as("user-b").get("/sessions").json()) == 1
+
+
+def test_account_deletion_takes_no_identifier():
+    """You can only delete your own account, which removes a class of bug rather than guarding it.
+
+    A path parameter would invite one caller to pass another caller's id.
+    """
+    paths = [getattr(r, "path", "") for r in app.routes]
+    assert "/account" in paths, "DELETE /account is missing"
+    # No /account/{something}: there is no way to name someone else's account.
+    assert not [p for p in paths if p.startswith("/account/")]
+
+
+def test_account_deletion_requires_authentication():
+    _setup(FakeRepo())
+    app.dependency_overrides.pop(auth.current_user_id, None)
+    assert TestClient(app).delete("/account").status_code == 401

@@ -503,6 +503,12 @@ body {
   .control::placeholder {
     color: var(--color-faint);
   }
+  /* A locked control still shows its value, because that value is information. It just cannot be
+     changed: editing a session cannot move the spot or the hour, since those identify it. */
+  .control:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
   /* A control you pick from rather than type into should say so on hover. A textarea keeps the text
      caret, which is correct there. */
   select.control,

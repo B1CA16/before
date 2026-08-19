@@ -13,6 +13,7 @@ import {
   SESSION_TAGS,
   TAG_LABELS,
   type ConditionsAt,
+  type SessionRow,
   type SessionTag,
   type Spot,
 } from "@/lib/api";
@@ -81,24 +82,33 @@ function presets(now: Date): { label: string; at: Date }[] {
 export default function LogSessionSheet({
   spots,
   defaultSlug,
+  initial = null,
   onClose,
   onLogged,
 }: {
   spots: Spot[];
   defaultSlug: string | null;
+  /** Present when editing an existing session rather than logging a new one. */
+  initial?: SessionRow | null;
   onClose: () => void;
   onLogged?: () => void;
 }) {
-  const { user, accessToken } = useAuth();
+  const { user, getToken } = useAuth();
+  // Editing needs no separate endpoint: POST upserts on (user, spot, surfed_at), so re-submitting the
+  // same key updates. The consequence is that spot and time are the session's identity, so they are
+  // locked below. Changing one would create a second session rather than move this one.
+  const editing = initial !== null;
 
-  const [slug, setSlug] = useState(defaultSlug ?? spots[0]?.slug ?? "");
-  const [when, setWhen] = useState(() => onTheHour(new Date()));
+  const [slug, setSlug] = useState(initial?.slug ?? defaultSlug ?? spots[0]?.slug ?? "");
+  const [when, setWhen] = useState(() =>
+    onTheHour(initial ? new Date(initial.surfed_at) : new Date())
+  );
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [whenRowEl, setWhenRowEl] = useState<HTMLDivElement | null>(null);
   const [dateBtnEl, setDateBtnEl] = useState<HTMLButtonElement | null>(null);
-  const [rating, setRating] = useState<number | null>(null);
-  const [tags, setTags] = useState<SessionTag[]>([]);
-  const [note, setNote] = useState("");
+  const [rating, setRating] = useState<number | null>(initial?.rating ?? null);
+  const [tags, setTags] = useState<SessionTag[]>((initial?.tags ?? []) as SessionTag[]);
+  const [note, setNote] = useState(initial?.note ?? "");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
@@ -145,13 +155,18 @@ export default function LogSessionSheet({
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
-    if (!accessToken || rating === null) return;
+    if (rating === null) return;
     setBusy(true);
     setError(null);
     try {
+      const token = await getToken();
+      if (!token) {
+        setError("Your session has expired. Sign in again to continue.");
+        return;
+      }
       // toISOString carries the offset, which the API requires: a timestamp without one would have
       // to be guessed, and a wrong guess pairs the rating with a different hour's conditions.
-      await logSession(accessToken, {
+      await logSession(token, {
         slug,
         surfed_at: when.toISOString(),
         rating,
@@ -196,10 +211,16 @@ export default function LogSessionSheet({
           <header className="flex items-start justify-between gap-3">
             <div>
               <h2 className="title text-primary">
-                {done ? "Session logged" : "Log a session"}
+                {done ? "Saved" : editing ? "Edit session" : "Log a session"}
               </h2>
               <p className="faint mt-0.5">
-                {done ? "Thanks, that is one more label." : "Rate one you actually surfed."}
+                {done
+                  ? editing
+                    ? "That rating is updated."
+                    : "Thanks, that is one more label."
+                  : editing
+                    ? "Change how you rated it."
+                    : "Rate one you actually surfed."}
               </p>
             </div>
             <button className="btn btn-quiet flex-none px-3" onClick={onClose}>
@@ -221,9 +242,11 @@ export default function LogSessionSheet({
               <p className="meta text-secondary">
                 {spotName}, rated {rating} out of 5. It is now part of what the model will learn from.
               </p>
-              <button className="btn btn-primary mt-3 w-full" onClick={logAnother}>
-                Log another
-              </button>
+              {!editing && (
+                <button className="btn btn-primary mt-3 w-full" onClick={logAnother}>
+                  Log another
+                </button>
+              )}
             </div>
           ) : (
             <form onSubmit={submit} className="mt-4">
@@ -236,6 +259,7 @@ export default function LogSessionSheet({
                 className="mt-1.5"
                 label="Spot"
                 searchable
+                disabled={editing}
                 value={slug}
                 options={spots.map((s) => ({ value: s.slug, label: s.name }))}
                 onChange={setSlug}
@@ -250,6 +274,7 @@ export default function LogSessionSheet({
                     key={p.label}
                     type="button"
                     className="toggle"
+                    disabled={editing}
                     aria-pressed={when.getTime() === p.at.getTime()}
                     onClick={() => {
                       setWhen(p.at);
@@ -268,6 +293,7 @@ export default function LogSessionSheet({
                   type="button"
                   className="control flex-1 text-left"
                   aria-expanded={calendarOpen}
+                  disabled={editing}
                   onClick={() => setCalendarOpen((v) => !v)}
                 >
                   <span className="truncate">{formatDay(when)}</span>
@@ -296,6 +322,7 @@ export default function LogSessionSheet({
                   className="w-28 flex-none"
                   label="Hour"
                   minWidth={132}
+                  disabled={editing}
                   value={String(when.getHours())}
                   options={HOUR_OPTIONS}
                   onChange={(hour) => {
@@ -321,7 +348,11 @@ export default function LogSessionSheet({
 
               </div>
 
-              <p className="faint mt-1.5">Any past date. Older sessions count just as much.</p>
+              <p className="faint mt-1.5">
+                {editing
+                  ? "Spot and time identify a session, so they cannot be changed here. Delete it and log it again to move it."
+                  : "Any past date. Older sessions count just as much."}
+              </p>
 
               {/* What we hold for that hour, so a wrong date is caught before it becomes a label. */}
               <div className="mt-2.5 rounded-chip bg-inset p-3">
@@ -413,7 +444,7 @@ export default function LogSessionSheet({
                 className="btn btn-primary mt-4 w-full"
                 disabled={busy || rating === null}
               >
-                {busy ? "Saving" : "Log this session"}
+                {busy ? "Saving" : editing ? "Save changes" : "Log this session"}
               </button>
               {rating === null && <p className="faint mt-1.5 text-center">Pick a rating first.</p>}
 

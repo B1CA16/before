@@ -65,7 +65,7 @@ function PersonIcon() {
   );
 }
 
-export default function AuthMenu() {
+export default function AuthMenu({ onShowSessions }: { onShowSessions?: () => void }) {
   const { user, loading } = useAuth();
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState<Step>("email");
@@ -185,7 +185,11 @@ export default function AuthMenu() {
 
   async function signOut() {
     if (!supabase) return;
-    await supabase.auth.signOut();
+    // A plain signOut asks the server to revoke the session, which fails when that session is already
+    // gone or revoked, and the earlier version then left the interface stuck as signed-in. Falling
+    // back to a local sign-out always clears the stored token, so the button cannot become a no-op.
+    const { error: signOutError } = await supabase.auth.signOut();
+    if (signOutError) await supabase.auth.signOut({ scope: "local" });
     setOpen(false);
   }
 
@@ -235,7 +239,18 @@ export default function AuthMenu() {
               <h2 className="section-title">Signed in</h2>
               <p className="meta mt-1.5 truncate text-primary">{user.email}</p>
               <p className="faint mt-2">Your logged sessions are private to this account.</p>
-              <button className="btn btn-quiet mt-3 w-full" onClick={signOut}>
+              {onShowSessions && (
+                <button
+                  className="btn btn-quiet mt-3 w-full"
+                  onClick={() => {
+                    setOpen(false);
+                    onShowSessions();
+                  }}
+                >
+                  Your sessions
+                </button>
+              )}
+              <button className="btn btn-quiet mt-2 w-full" onClick={signOut}>
                 Sign out
               </button>
             </>

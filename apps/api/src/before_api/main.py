@@ -110,6 +110,17 @@ def my_sessions(user_id: CurrentUser, repo: RepoDep):
     return repo.list_sessions(user_id)
 
 
+@app.delete("/account", status_code=204)
+def delete_account(user_id: CurrentUser, repo: RepoDep):
+    """Erase the caller's account and, by cascade, every session they logged.
+
+    Takes no identifier: the only account anyone can delete here is their own, which removes a whole
+    class of authorisation bug rather than guarding against it.
+    """
+    if not repo.delete_account(user_id):
+        raise HTTPException(status_code=404, detail="account not found")
+
+
 @app.delete("/sessions/{session_id}", status_code=204)
 def delete_session(session_id: int, user_id: CurrentUser, repo: RepoDep):
     if not repo.delete_session(user_id, session_id):

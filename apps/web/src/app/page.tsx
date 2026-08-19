@@ -6,11 +6,12 @@ import { useEffect, useMemo, useState } from "react";
 import AuthMenu from "@/components/AuthMenu";
 import Chip from "@/components/Chip";
 import LogSessionSheet from "@/components/LogSessionSheet";
+import SessionsSheet from "@/components/SessionsSheet";
 import RankedList from "@/components/RankedList";
 import SpotDetail from "@/components/SpotDetail";
 import WaveLoader from "@/components/WaveLoader";
 import Wordmark from "@/components/Wordmark";
-import { getScores, getSpots, type ScoreNow, type Spot } from "@/lib/api";
+import { getScores, getSpots, type ScoreNow, type SessionRow, type Spot } from "@/lib/api";
 import { scoreColor, scoreLabel, scoreWord } from "@/lib/score";
 
 // Leaflet touches window, so the map is browser-only.
@@ -27,10 +28,12 @@ function TopBar({
   query,
   onQuery,
   loading,
+  onShowSessions,
 }: {
   query: string;
   onQuery: (v: string) => void;
   loading: boolean;
+  onShowSessions: () => void;
 }) {
   return (
     <header className="z-[1000] flex h-16 flex-none items-center gap-3 border-b border-hairline bg-panel px-4 shadow-[var(--shadow-1)]">
@@ -61,7 +64,7 @@ function TopBar({
           />
           Updated 06:00
         </span>
-        <AuthMenu />
+        <AuthMenu onShowSessions={onShowSessions} />
       </div>
     </header>
   );
@@ -77,6 +80,8 @@ export default function Home() {
   const [query, setQuery] = useState("");
   const [hovered, setHovered] = useState<string | null>(null);
   const [logging, setLogging] = useState(false);
+  const [sessionsOpen, setSessionsOpen] = useState(false);
+  const [editing, setEditing] = useState<SessionRow | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -127,7 +132,12 @@ export default function Home() {
 
   return (
     <div className="grid h-full grid-rows-[auto_1fr]">
-      <TopBar query={query} onQuery={setQuery} loading={spots.length === 0 && !failed} />
+      <TopBar
+        query={query}
+        onQuery={setQuery}
+        loading={spots.length === 0 && !failed}
+        onShowSessions={() => setSessionsOpen(true)}
+      />
 
       <div className="grid min-h-0 md:grid-cols-[19rem_1fr]">
         {/* Rail: a verdict card, then one card per spot. Same shapes as the detail panel. */}
@@ -310,11 +320,29 @@ export default function Home() {
         </section>
       </div>
 
-      {logging && (
+      {sessionsOpen && (
+        <SessionsSheet
+          onClose={() => setSessionsOpen(false)}
+          onEdit={(session) => {
+            // The editor replaces the list rather than stacking on top of it, and closing the editor
+            // brings the list back, so editing several in a row does not mean reopening the menu.
+            setSessionsOpen(false);
+            setEditing(session);
+          }}
+        />
+      )}
+
+      {(logging || editing) && (
         <LogSessionSheet
           spots={spots}
           defaultSlug={selected}
-          onClose={() => setLogging(false)}
+          initial={editing}
+          onClose={() => {
+            const cameFromList = editing !== null;
+            setEditing(null);
+            setLogging(false);
+            if (cameFromList) setSessionsOpen(true);
+          }}
         />
       )}
     </div>

@@ -155,6 +155,21 @@ class SupabaseRepository:
             )
             return _rows_as_dicts(cur)
 
+    def delete_account(self, user_id: str) -> bool:
+        """Erase an account and everything hanging off it: the GDPR right to erasure.
+
+        Deleting the `auth.users` row is sufficient. Every foreign key pointing at it cascades,
+        including `auth.sessions` (login sessions) and our `surf_sessions` (their ratings). That was
+        checked against the live schema rather than assumed.
+
+        Done through the database rather than Supabase's admin API on purpose. We already hold owner
+        access via DATABASE_URL, whereas the admin route would mean adding a service-role key: one
+        more highly privileged secret that bypasses row level security, for no extra capability.
+        """
+        with psycopg.connect(self.database_url) as conn:
+            cur = conn.execute("delete from auth.users where id = %(id)s", {"id": user_id})
+            return cur.rowcount > 0
+
     def delete_session(self, user_id: str, session_id: int) -> bool:
         """True if a row belonging to this user was deleted.
 
