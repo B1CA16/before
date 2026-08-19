@@ -66,6 +66,34 @@ class SupabaseRepository:
             data = cur.fetchall()
         return pd.DataFrame(data, columns=columns)
 
+    def get_conditions_at(self, slug: str, at) -> pd.DataFrame:
+        """Conditions for one spot at one hour, for logging a session that already happened.
+
+        Distinct from get_forecast, which only returns hours still ahead of us. A session logged
+        from memory is in the past, so it needs whatever we have on record for that hour.
+
+        Prefers `archive` over `forecast`, the same preference the training join will make: the
+        archive is what the ocean did, the forecast is what we guessed it would do.
+        """
+        with psycopg.connect(self.database_url) as conn:
+            cur = conn.execute(
+                """
+                select c.observed_at, c.source, s.orientation_deg,
+                       c.swell_height_m, c.swell_period_s, c.swell_direction_deg,
+                       c.wind_speed_kmh, c.wind_direction_deg
+                from conditions c
+                join spots s on s.id = c.spot_id
+                where s.slug = %(slug)s
+                  and c.observed_at = date_trunc('hour', %(at)s::timestamptz)
+                order by case c.source when 'archive' then 0 else 1 end
+                limit 1
+                """,
+                {"slug": slug, "at": at},
+            )
+            columns = [desc.name for desc in cur.description]
+            data = cur.fetchall()
+        return pd.DataFrame(data, columns=columns)
+
     # --- surf sessions (labels) -------------------------------------------------------------------
     #
     # SECURITY: this service connects as the table owner, which BYPASSES row level security. The

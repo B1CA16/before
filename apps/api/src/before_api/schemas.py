@@ -47,6 +47,22 @@ class ForecastHour(BaseModel):
     wind_speed_kmh: float | None
 
 
+class ConditionsAt(BaseModel):
+    """What we have on record for one spot at one past hour, shown while logging a session.
+
+    `source` is surfaced rather than hidden because it changes what the reading means: `archive` is
+    measured, `forecast` is what was predicted at the time.
+    """
+
+    observed_at: datetime
+    source: str
+    score: float | None
+    swell_height_m: float | None
+    swell_period_s: float | None
+    wind_speed_kmh: float | None
+    offshore_component: float | None
+
+
 class SessionIn(BaseModel):
     """A surfed session being logged. This is a label, so the validation here is label quality."""
 

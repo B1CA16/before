@@ -1,14 +1,22 @@
 """FastAPI application for beFORE."""
 
+from datetime import datetime
 from typing import Annotated
 
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
 from before_api.auth import CurrentUser
-from before_api.forecast import build_forecast_rows, build_score_rows
+from before_api.forecast import build_conditions_row, build_forecast_rows, build_score_rows
 from before_api.repository import SupabaseRepository, get_repository
-from before_api.schemas import ForecastHour, ScoreOut, SessionIn, SessionOut, SpotOut
+from before_api.schemas import (
+    ConditionsAt,
+    ForecastHour,
+    ScoreOut,
+    SessionIn,
+    SessionOut,
+    SpotOut,
+)
 from before_surf.config import get_settings
 from before_surf.scoring.heuristic import HeuristicScorer
 
@@ -52,6 +60,20 @@ def spot_forecast(slug: str, repo: RepoDep):
     if df.empty:
         return []
     return build_forecast_rows(df, _scorer)
+
+
+@app.get("/spots/{slug}/conditions", response_model=ConditionsAt)
+def conditions_at(slug: str, at: datetime, repo: RepoDep):
+    """Conditions for a given hour, so someone logging a past session can check they have the right
+    one, and can see when we have no record of that hour at all."""
+    if repo.get_spot(slug) is None:
+        raise HTTPException(status_code=404, detail="spot not found")
+    df = repo.get_conditions_at(slug, at)
+    if df.empty:
+        # A real answer, not an error state to paper over: with no conditions for this hour, a
+        # session logged here cannot become a training example.
+        raise HTTPException(status_code=404, detail="no conditions on record for that hour")
+    return build_conditions_row(df, _scorer)
 
 
 # --- surf sessions --------------------------------------------------------------------------------

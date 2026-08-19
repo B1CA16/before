@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 
 import AuthMenu from "@/components/AuthMenu";
 import Chip from "@/components/Chip";
+import LogSessionSheet from "@/components/LogSessionSheet";
 import RankedList from "@/components/RankedList";
 import SpotDetail from "@/components/SpotDetail";
 import WaveLoader from "@/components/WaveLoader";
@@ -75,6 +76,7 @@ export default function Home() {
   const [sheetTab, setSheetTab] = useState<"spot" | "list">("spot");
   const [query, setQuery] = useState("");
   const [hovered, setHovered] = useState<string | null>(null);
+  const [logging, setLogging] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -222,6 +224,7 @@ export default function Home() {
                   key={selectedSpot.slug}
                   spot={selectedSpot}
                   now={scores[selectedSpot.slug]}
+                  onLogSession={() => setLogging(true)}
                 />
               </div>
             </div>
@@ -286,6 +289,7 @@ export default function Home() {
                       key={selectedSpot.slug}
                       spot={selectedSpot}
                       now={scores[selectedSpot.slug]}
+                      onLogSession={() => setLogging(true)}
                     />
                   ) : (
                     <div className="pb-1">
@@ -305,6 +309,14 @@ export default function Home() {
           </div>
         </section>
       </div>
+
+      {logging && (
+        <LogSessionSheet
+          spots={spots}
+          defaultSlug={selected}
+          onClose={() => setLogging(false)}
+        />
+      )}
     </div>
   );
 }

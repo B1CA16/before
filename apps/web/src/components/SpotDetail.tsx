@@ -70,7 +70,15 @@ function Breakdown({ hour }: { hour: ForecastHour }) {
   );
 }
 
-export default function SpotDetail({ spot, now }: { spot: Spot; now?: ScoreNow }) {
+export default function SpotDetail({
+  spot,
+  now,
+  onLogSession,
+}: {
+  spot: Spot;
+  now?: ScoreNow;
+  onLogSession?: () => void;
+}) {
   const [hours, setHours] = useState<ForecastHour[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -165,6 +173,17 @@ export default function SpotDetail({ spot, now }: { spot: Spot; now?: ScoreNow }
       )}
 
       {upcoming.length > 0 && <Breakdown hour={upcoming[0]} />}
+
+      {onLogSession && (
+        <section className="mt-4 border-t border-hairline pt-3.5">
+          <button className="btn btn-quiet w-full" onClick={onLogSession}>
+            Log a session here
+          </button>
+          <p className="faint mt-2 text-center">
+            Rating what you surfed is what teaches the score.
+          </p>
+        </section>
+      )}
     </div>
   );
 }

@@ -10,6 +10,26 @@ def _clean(value) -> float | None:
     return None if pd.isna(value) else round(float(value), 2)
 
 
+def build_conditions_row(df: pd.DataFrame, scorer: HeuristicScorer) -> dict:
+    """Shape a single conditions row (one spot, one hour) for the session-logging form.
+
+    `offshore_component` comes from the features frame, not from explain(), which returns only the
+    four sub-scores and the total.
+    """
+    feats = build_features(df)
+    explained = scorer.explain(feats)
+    row = df.iloc[0]
+    return {
+        "observed_at": row["observed_at"],
+        "source": row["source"],
+        "score": _clean(explained["score"].iloc[0]),
+        "swell_height_m": _clean(row["swell_height_m"]),
+        "swell_period_s": _clean(row["swell_period_s"]),
+        "wind_speed_kmh": _clean(row["wind_speed_kmh"]),
+        "offshore_component": _clean(feats["offshore_component"].iloc[0]),
+    }
+
+
 def build_score_rows(df: pd.DataFrame, scorer: HeuristicScorer) -> list[dict]:
     if df.empty:
         return []
