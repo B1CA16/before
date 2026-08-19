@@ -279,13 +279,21 @@ Milestones 0-6 deliver **v0** (a usable product with an honest heuristic brain);
 | **6** | Web UI (read-only): Next.js map + score forecast; deploy API + frontend | Frontend integration, deployment | 🟡 Medium |
 | | **── v0 shipped (usable product) ──** | | |
 | **7** | Session logging + labels: auth, sessions table, ratings (closes the label loop) | Auth, data modeling, GDPR | 🟡 Medium |
-| **8** | First ML model (v1): build training set from labels, train `MLScorer`, beat the heuristic | Supervised training, train/val/test, CV, model selection | 🔴 Hard |
-| **9** | Tuning + XAI + MLOps: hyperparameter tuning, SHAP, experiment tracking, versioning, CI | Tuning, Explainable AI, MLOps | 🔴 Hard |
+| **8** | Product readiness: Portuguese, server-rendered spot pages, tide, favourites, legal pages, SEO | Rendering strategy, i18n, GDPR, SEO as engineering | 🟡 Medium |
+| **9** | First ML model (v1): build training set from labels, train `MLScorer`, beat the heuristic | Supervised training, train/val/test, CV, model selection | 🔴 Hard |
+| **10** | Tuning + XAI + MLOps: hyperparameter tuning, SHAP, experiment tracking, versioning, CI | Tuning, Explainable AI, MLOps | 🔴 Hard |
 | | **── v1 shipped. v2 (personalization) = future ──** | | |
 
 > **Roadmap renumbered 2026-07-28:** the original M6 (map + score + session logging) was split into
 > a read-only Web UI + deploy (M6) and session logging + labels (M7); the ML model and tuning shifted
 > to M8 and M9.
+>
+> **Renumbered again 2026-08-19:** M7 shipped the label loop and the label report returned zero labels.
+> The binding constraint stopped being engineering: the owner does not surf and cannot honestly produce
+> labels, so somebody else has to, and nobody had a reason to use the site yet. A product-readiness
+> milestone was inserted as M8 to make it usable, translated and findable, pushing the ML model to M9
+> and tuning to M10. The heuristic keeps serving the product in the meantime, which is exactly the
+> maturity ladder working as designed rather than a delay.
 
 > **Most important lesson:** milestones 0-6 contain almost no "AI." Real ML is ~80% data
 > engineering, EDA, and evaluation plumbing; the model is the small exciting bit at the end that
