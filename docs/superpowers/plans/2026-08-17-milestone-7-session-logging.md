@@ -163,17 +163,28 @@ for ES256/JWKS verification in FastAPI, existing `before_surf` package for the t
 
 ### Task 6: recurring archive backfill (label ground truth)
 
-- [ ] Problem to state clearly first: a session logged today has only `forecast` conditions, because
-      the archive ingestion was a one-off backfill of the previous year. Training on forecast rows
-      teaches the model to reproduce the forecast rather than the ocean.
-- [ ] ERA5 archive lags real time by roughly five days, so backfill the trailing window rather than
-      yesterday. Confirm the actual lag against the API before fixing the window.
-- [ ] Add a weekly GitHub Actions cron that backfills archive conditions for the trailing ~2 weeks,
-      reusing the existing idempotent `ON CONFLICT` ingestion path so re-runs are safe.
-- [ ] Weekly, not daily: Actions minutes on a private repo are capped at 2,000/month and the keep-warm
-      analysis in ADR-0004 showed how fast that budget goes.
-- [ ] Verify a session logged today gains an `archive` row within a week.
-- [ ] **Commit:** `feat: backfill archive conditions weekly for session labels`
+> **Measured, not assumed.** Two findings changed this task. First, the archive endpoint has **no
+> usable lag**: asked for data up to today, it returns complete hours through today. The 5-day lag was
+> kept anyway, because recent days come back as a preliminary product still being revised and
+> `source = 'archive'` should mean settled. Second, and the reason this task matters at all: across
+> the 48,576 spot-hours now holding both sources, archive and forecast disagree on **every hour**, by
+> 0.45 s of swell period on average and **6.25 s at worst**. The period ramp spans 3 to 13 s, so that
+> worst case is 0.625 of the period sub-score, in the factor that most often decides the total.
+
+- [x] Problem stated: a session logged today has only `forecast` conditions, because the archive
+      ingestion was a one-off backfill of the previous year. Training on forecast rows teaches the
+      model to reproduce the forecast rather than the ocean.
+- [x] Lag confirmed against the API rather than assumed, and the window sized from the schedule:
+      a run sees settled data up to 5 days old, the previous weekly run saw up to 12 days old, so the
+      window must exceed 12 days or some hours are never fetched. 21 days absorbs a missed run too.
+      Both bounds are pinned by tests.
+- [x] Weekly GitHub Actions cron (`archive-refresh.yml`, Mondays 05:30 UTC, clear of the 06:00
+      forecast job), reusing the idempotent `ON CONFLICT` path so overlapping re-runs are free.
+- [x] Weekly, not daily: ~9 minutes a month against the 2,000 available, leaving the daily forecast
+      ingestion its 60. Same budget arithmetic as ADR-0004.
+- [x] Verified by running it: archive coverage moved from 2026-07-19 to 2026-08-14, closing the
+      forecast-only gap, in 20 seconds for 48,576 rows.
+- [ ] **Commit:** `feat: refresh archive conditions weekly for session labels`
 
 ### Task 7: training-set builder and label report
 

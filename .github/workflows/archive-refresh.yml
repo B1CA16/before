@@ -1,0 +1,37 @@
+name: Refresh archive conditions
+
+# Gives logged sessions their ground truth. A session can only be paired with `forecast` conditions on
+# the day it happens, and training on those teaches the model to reproduce the forecast instead of the
+# ocean. Measured against hours we had already stored as forecast, the archive differs on every hour,
+# by up to 4.2 s of swell period, which is 0.42 of the period sub-score.
+#
+# Weekly, not daily, and that is a budget decision rather than a technical one: Actions bills private
+# repositories by the minute against 2,000 a month, and the daily forecast ingestion has first claim
+# on that. See docs/adr/0004-keeping-the-free-tier-api-warm.md for the same arithmetic.
+on:
+  schedule:
+    # Mondays at 05:30 UTC, clear of the 06:00 forecast ingestion so the two never contend.
+    - cron: "30 5 * * 1"
+  workflow_dispatch:
+
+jobs:
+  archive:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+
+      - name: Install Python
+        run: uv python install 3.12
+
+      - name: Sync workspace
+        run: uv sync --all-packages --locked
+
+      - name: Refresh the trailing archive window
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: uv run python -m before_surf.ingestion.run_archive_refresh
