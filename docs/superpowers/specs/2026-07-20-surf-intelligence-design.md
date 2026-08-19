@@ -307,10 +307,14 @@ Milestones 0-6 deliver **v0** (a usable product with an honest heuristic brain);
 
 ## 13. Deferred decisions (revisited later, deliberately)
 
-- Regression vs. ordinal classification for the score → **M7**.
+- ~~Regression vs. ordinal classification for the score~~ → **resolved at M7: binary classification**
+  for v1 (`worth_it = rating >= 4`). Ordinal needs ~20 examples per class at the volumes available,
+  which is too thin. The 1-to-5 rating is still stored, so ordinal stays open for v2 (ADR-0006).
 - Exact spot list (~20-50, auto-extracted from OSM/Wikidata, manually correctable) → **M1**.
 - Bathymetry sourcing (GEBCO/EMODnet) → deferred until the heuristic needs it (post-M1).
-- Final v1 label design (session ratings vs any expert/annotation signal) → **M7**.
+- ~~Final v1 label design (session ratings vs any expert/annotation signal)~~ → **resolved at M7:
+  user session ratings only**, no expert annotation. 1-to-5 plus structured tags, collected rich and
+  trained coarse; conditions joined at training time preferring `archive` over `forecast` (ADR-0006).
 - Exact API deploy host (Vercel functions vs HF Spaces vs Render) → **M5**.
 - Experiment-tracking tool (MLflow vs W&B) → **M8**.
 - Multi-sport module restructuring → when sport #2 is scheduled.
@@ -325,3 +329,16 @@ Milestones 0-6 deliver **v0** (a usable product with an honest heuristic brain);
 
 - Schema management: Supabase CLI + hand-written SQL migrations (ADR-0002).
 - Spot sourcing: automated from OSM/Wikidata, no reliance on expert annotation (ADR-0003).
+- Keeping the free-tier API warm with an external scheduler, not a GitHub Action (ADR-0004).
+- Google sign-in instead of email, because no free mail provider will send without a sender
+  domain (ADR-0005).
+- Label design: 1-to-5 ratings plus tags, trained as a binary collapse (ADR-0006).
+
+### Added to M7 during implementation
+
+- **Retrospective session logging.** Not in the original plan, and the highest-leverage feature in the
+  milestone: a year of archive conditions is already stored, so remembered sessions become labels
+  immediately instead of accumulating at the pace of real weeks.
+- **A weekly archive refresh.** A session logged today can only be paired with forecast conditions.
+  Since the two sources disagree by up to 6.25 s of swell period, recent labels would otherwise carry
+  substantial noise in the model's strongest feature.

@@ -133,33 +133,33 @@ for ES256/JWKS verification in FastAPI, existing `before_surf` package for the t
       delete user B's session, since the owner connection bypasses RLS and this filter is the only
       real control.
 - [x] Extend CORS `allow_methods` beyond `GET` to include `POST`, `DELETE` and `OPTIONS`.
-- [ ] **Commit:** `feat: add authenticated session endpoints`
+- [x] **Commit:** `feat: add authenticated session endpoints`
 
 ### Task 4: the log-a-session flow
 
-- [ ] A "Log a session" form: spot selector (default to the currently selected spot), date and time
+- [x] A "Log a session" form: spot selector (default to the currently selected spot), date and time
       inputs defaulting to now but accepting any past value, 1-5 rating, optional tags, optional note.
-- [ ] Make retrospective logging feel first-class, not an edge case: the date field is a normal input,
+- [x] Make retrospective logging feel first-class, not an edge case: the date field is a normal input,
       not hidden behind an "advanced" toggle. This is the highest-leverage feature in the milestone.
-- [ ] Show the conditions we have on record for the chosen spot and hour, so the user can sanity-check
+- [x] Show the conditions we have on record for the chosen spot and hour, so the user can sanity-check
       they are rating the right session, and say plainly when no conditions exist for that hour (an
       honest empty state, not a silent zero, which was an M6 lesson).
-- [ ] Optimistic success state, clear error surfacing, and a disabled submit while in flight.
-- [ ] Mobile first: this gets used in a car park with cold hands. Large tap targets, no hover-only
+- [x] Optimistic success state, clear error surfacing, and a disabled submit while in flight.
+- [x] Mobile first: this gets used in a car park with cold hands. Large tap targets, no hover-only
       affordances.
-- [ ] Verify with `npm run shots` at mobile and desktop widths before declaring it done. Do not design
+- [x] Verify with `npm run shots` at mobile and desktop widths before declaring it done. Do not design
       blind: the single biggest process failure of M6 was not looking at my own output.
-- [ ] **Commit:** `feat: add session logging form`
+- [x] **Commit:** `feat: add session logging form`
 
 ### Task 5: my sessions list and account deletion
 
-- [ ] A list of the caller's sessions: spot, date, rating, tags, with edit and delete.
-- [ ] Deleting a session asks for confirmation, since it destroys a label.
-- [ ] An account deletion path that removes the user and cascades their sessions, satisfying the GDPR
+- [x] A list of the caller's sessions: spot, date, rating, tags, with edit and delete.
+- [x] Deleting a session asks for confirmation, since it destroys a label.
+- [x] An account deletion path that removes the user and cascades their sessions, satisfying the GDPR
       right to erasure. Document where it lives.
-- [ ] A short privacy note in the UI stating what is stored (email, sessions) and that sessions are
+- [x] A short privacy note in the UI stating what is stored (email, sessions) and that sessions are
       private to the account. Honest and brief, not a generated wall of legalese.
-- [ ] **Commit:** `feat: add session history and account deletion`
+- [x] **Commit:** `feat: add session history and account deletion`
 
 ### Task 6: recurring archive backfill (label ground truth)
 
@@ -184,7 +184,7 @@ for ES256/JWKS verification in FastAPI, existing `before_surf` package for the t
       ingestion its 60. Same budget arithmetic as ADR-0004.
 - [x] Verified by running it: archive coverage moved from 2026-07-19 to 2026-08-14, closing the
       forecast-only gap, in 20 seconds for 48,576 rows.
-- [ ] **Commit:** `feat: refresh archive conditions weekly for session labels`
+- [x] **Commit:** `feat: refresh archive conditions weekly for session labels`
 
 ### Task 7: training-set builder and label report
 
@@ -204,7 +204,7 @@ for ES256/JWKS verification in FastAPI, existing `before_surf` package for the t
 - [x] Tests (16): the 3/4 boundary parameterised across all five ratings, the archive preference
       asserted **in the SQL text** (a Python-side sort could be dropped in a refactor and never
       noticed), and unusable rows dropped-and-counted rather than filled.
-- [ ] **Commit:** `feat: add training-set builder and label report`
+- [x] **Commit:** `feat: add training-set builder and label report`
 
 **Current verdict, run against the live database: 0 labels, NOT READY.** That is the expected answer,
 and it is the milestone working rather than failing: the machinery to answer the question now exists,
@@ -212,13 +212,16 @@ and the answer is honest.
 
 ### Task 8: docs, ADR and spec update
 
-- [ ] ADR for the label design: the 1-5-plus-tags collection with binary training, why not ordinal at
-      this sample size, and the archive-over-forecast rule. This is the most consequential decision of
-      the project and deserves its own record.
-- [ ] Update the spec: resolve the two deferred decisions at lines 310 and 313 (regression vs ordinal;
-      final v1 label design), and note that retrospective logging was added to M7.
-- [ ] README: how to run the app signed in, and the new env vars.
-- [ ] Milestone learnings summary, per the teaching convention.
+- [x] `docs/adr/0006-label-design.md`: 1-to-5 collection with binary training, why ordinal fails at
+      this sample size, why tags exist (naming the noise no feature can see), and the
+      archive-over-forecast rule with the measured 6.25 s worst case behind it.
+- [x] Spec updated: both deferred decisions struck through and resolved (binary classification for v1;
+      user session ratings only), ADRs 0004 to 0006 listed, and a new "Added to M7 during
+      implementation" section recording retrospective logging and the weekly archive refresh.
+- [x] README: how to run both processes, the full environment table, the Google OAuth redirect that
+      catches everyone out, how to log a session, and how to run the label report. Also notes there is
+      deliberately no JWT secret.
+- [x] `2026-08-17-milestone-7-learnings.md`, including the five things I got wrong and what each cost.
 - [ ] **Commit:** `docs: record the label design decision and M7 learnings`
 
 ---
