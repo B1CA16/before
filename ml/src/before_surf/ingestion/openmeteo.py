@@ -18,6 +18,8 @@ MARINE_VARS: dict[str, str] = {
     "swell_wave_period": "swell_period_s",
     "swell_wave_direction": "swell_direction_deg",
     "sea_surface_temperature": "water_temp_c",
+    # Tide. Sea level relative to mean sea level, so it is signed: negative is below MSL.
+    "sea_level_height_msl": "sea_level_m",
 }
 
 WEATHER_VARS: dict[str, str] = {

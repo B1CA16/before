@@ -64,20 +64,36 @@ Inserting this milestone shifts the ML work back. Update section 11 of the spec:
 
 ### Task 1: tide in the pipeline
 
-- [ ] Migration adding `sea_level_m real` to `conditions`. Nullable: a year of existing rows will not
-      have it, and backfilling is a separate step.
-- [ ] Add `sea_level_height_msl` to the marine variables and to `build_condition_rows`.
-- [ ] Re-run the archive refresh so the trailing window gains tide, then note in the plan how far back
-      tide coverage actually goes. Do not claim the full year has it unless a query says so.
-- [ ] Derived, in `features/derive.py`, because raw metres are not meaningful on their own:
-      `tide_state` (position within the local low-to-high range) and `tide_rising` (sign of the change
-      to the next hour). Both shape-agnostic numpy, same as the existing primitives.
-- [ ] Expose on `/scores`, `/spots/{slug}/forecast` and `/spots/{slug}/conditions`.
-- [ ] Show it in the spot panel: current height, whether it is rising or falling, and the next turn.
-      A tide row on the forecast timeline if it reads clearly; skip it if it makes the chart busy.
-- [ ] Tests: the derived features at low, mid and high water, and that a null `sea_level_m` propagates
-      to null rather than to a plausible-looking zero.
+- [x] Migration `20260819203225_add_sea_level.sql` adds `sea_level_m real`, nullable. Validated in a
+      rolled-back transaction, including that the generated upsert round-trips a value.
+- [x] One line in `MARINE_VARS`, because `CONDITION_COLUMNS` and the upsert SQL are both generated from
+      it. Verified the propagation reached the insert list and the on-conflict update.
+- [x] **Coverage measured, and the plan's warning was justified.** The trailing refresh alone left tide
+      on only **6%** of archive rows, which would have meant no tide for any session logged from more
+      than three weeks ago, gutting the retrospective label strategy. Ran the full year backfill:
+      808,128 rows in 2m58s, taking archive coverage to **93%, 2025-08-14 to 2026-08-14**. Forecast sits
+      at 21% because 624 pre-migration rows for past hours remain; those hours have archive rows with
+      tide, so the training join is unaffected.
+- [x] `tide_state` and `tide_rising` in `features/derive.py`, but **deliberately outside
+      `build_features`**. Neither can be computed from a single row: direction needs the next hour, and
+      height needs the surrounding low and high water, because raw metres are not comparable between
+      spots or between spring and neap. `build_features` stays strictly row-wise, which is what lets it
+      serve one hour at request time and a million in training.
+- [x] Exposed: raw level on `/scores` and `/spots/{slug}/conditions`, and level plus state and direction
+      on `/spots/{slug}/forecast`, the only endpoint holding a whole series for one spot. Pairing tide
+      with a session label needs a window around that hour, which is M9's problem, noted not fudged.
+- [x] Spot panel shows height, rising or falling, the next turn, and a low-to-high bar. Left off the
+      timeline chart: a second series made it busy for no gain.
+- [x] 8 python tests against a synthetic semidiurnal curve plus 6 TypeScript tests for the turn finder.
+      The ones that matter: `tide_state` is identical for a 0.8 m and a 3.5 m range (the whole point of
+      normalising); the last hour has no direction rather than a guess, since `NaN > 0` would silently
+      collapse to "falling"; nulls stay null so the 800,000 pre-migration rows cannot become a
+      plausible-looking mid-tide; and out-of-order rows are sorted before differencing.
 - [ ] **Commit:** `feat: ingest and display tide`
+
+> Noted while verifying, not fixed here: `/spots/{slug}/forecast` returns 792 hours when the UI uses
+> 147, because old forecast rows are never pruned. Five times the payload for a phone on a car-park
+> connection. Worth filtering to future hours during Task 6.
 
 ### Task 2: routes, deep links and server rendering
 

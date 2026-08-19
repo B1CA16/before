@@ -33,6 +33,9 @@ def test_build_forecast_rows_shapes_a_row():
         "swell_height_m",
         "swell_period_s",
         "wind_speed_kmh",
+        "sea_level_m",
+        "tide_state",
+        "tide_rising",
     }
     assert row["score"] is not None and 0.0 <= row["score"] <= 10.0
     assert row["swell_period_s"] == 12.0

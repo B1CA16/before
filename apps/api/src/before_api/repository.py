@@ -10,7 +10,7 @@ _SPOT_COLUMNS = "slug, name, region, latitude, longitude, orientation_deg"
 _FORECAST_QUERY = """
 select c.observed_at, s.orientation_deg,
        c.swell_height_m, c.swell_period_s, c.swell_direction_deg,
-       c.wind_speed_kmh, c.wind_direction_deg
+       c.wind_speed_kmh, c.wind_direction_deg, c.sea_level_m
 from conditions c
 join spots s on s.id = c.spot_id
 where s.slug = %(slug)s and c.source = 'forecast'
@@ -22,7 +22,7 @@ _CURRENT_CONDITIONS_QUERY = """
 select distinct on (s.slug)
        s.slug, s.orientation_deg,
        c.swell_height_m, c.swell_period_s, c.swell_direction_deg,
-       c.wind_speed_kmh, c.wind_direction_deg
+       c.wind_speed_kmh, c.wind_direction_deg, c.sea_level_m
 from spots s
 join conditions c on c.spot_id = s.id and c.source = 'forecast'
 where c.observed_at >= now()
@@ -80,7 +80,7 @@ class SupabaseRepository:
                 """
                 select c.observed_at, c.source, s.orientation_deg,
                        c.swell_height_m, c.swell_period_s, c.swell_direction_deg,
-                       c.wind_speed_kmh, c.wind_direction_deg
+                       c.wind_speed_kmh, c.wind_direction_deg, c.sea_level_m
                 from conditions c
                 join spots s on s.id = c.spot_id
                 where s.slug = %(slug)s

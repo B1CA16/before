@@ -12,6 +12,7 @@ export type Spot = {
 export type ScoreNow = {
   slug: string;
   score: number | null;
+  sea_level_m: number | null;
   swell_height_m: number | null;
   swell_period_s: number | null;
   wind_speed_kmh: number | null;
@@ -23,6 +24,11 @@ export type ScoreNow = {
 export type ForecastHour = {
   observed_at: string;
   score: number | null;
+  /** Sea level relative to mean sea level, so negative is below it. */
+  sea_level_m: number | null;
+  /** 0 at low water, 1 at high. Normalised, so it means the same at any spot and any tidal range. */
+  tide_state: number | null;
+  tide_rising: boolean | null;
   size: number | null;
   period: number | null;
   wind: number | null;

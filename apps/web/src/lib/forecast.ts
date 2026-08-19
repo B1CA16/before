@@ -27,3 +27,32 @@ export function formatHour(iso: string): string {
     minute: "2-digit",
   });
 }
+
+/* --- tide ---------------------------------------------------------------------------------------- */
+
+export type TideTurn = { at: string; kind: "high" | "low"; height: number | null };
+
+/**
+ * The next high or low water in a forecast series, or null if none is in range.
+ *
+ * Found from the flip in `tide_rising` rather than by hunting for extreme heights, because that flag
+ * already encodes exactly this: it is true when the following hour is higher. Where it goes from true
+ * to false, the hour in between is the peak.
+ */
+export function nextTideTurn(hours: ForecastHour[]): TideTurn | null {
+  for (let i = 0; i < hours.length - 1; i++) {
+    const rising = hours[i].tide_rising;
+    const next = hours[i + 1].tide_rising;
+    // Nulls are unknowns, not falses: the last hour of a series has no successor to compare with.
+    if (rising === null || next === null || rising === next) continue;
+    const turn = hours[i + 1];
+    return { at: turn.observed_at, kind: rising ? "high" : "low", height: turn.sea_level_m };
+  }
+  return null;
+}
+
+/** How to say a tide height out loud. Signed, because below mean sea level is meaningful. */
+export function tideLabel(metres: number | null): string {
+  if (metres === null) return "-";
+  return `${metres > 0 ? "+" : ""}${metres.toFixed(1)} m`;
+}

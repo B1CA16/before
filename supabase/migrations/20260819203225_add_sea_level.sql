@@ -1,0 +1,17 @@
+-- Tide, stored as sea level relative to mean sea level in metres.
+--
+-- Surfers ask about tide before almost anything else, and until now the model and the interface were
+-- both silent on it. It comes from `sea_level_height_msl` on the same marine API we already call, at
+-- no extra cost, and it is available for historical hours too, so sessions logged from memory can
+-- carry it as well.
+--
+-- Nullable, deliberately: over 800,000 rows already exist without it and backfilling them is a
+-- separate step. A null here means "we were not collecting this yet", which must stay distinguishable
+-- from a genuine reading of 0.0 m, that being mean sea level and a perfectly ordinary value.
+--
+-- Note what this column does NOT do: it does not enter the BeFORE score. Scoring tide would mean
+-- knowing which state each spot works best at, which is per-spot bathymetry that the spec defers.
+-- Inventing a rule instead is exactly the unevidenced hand-tuning that produced the all-zeros
+-- collapse in the heuristic. So it is displayed for surfers to weigh themselves, and offered to the
+-- ML model in M9, which can learn a per-spot preference if the labels ever support one.
+alter table conditions add column sea_level_m real;

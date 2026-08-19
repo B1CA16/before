@@ -2,7 +2,7 @@
 
 import pandas as pd
 
-from before_surf.features.derive import build_features
+from before_surf.features.derive import add_tide_features, build_features
 from before_surf.scoring.heuristic import HeuristicScorer
 
 
@@ -27,6 +27,7 @@ def build_conditions_row(df: pd.DataFrame, scorer: HeuristicScorer) -> dict:
         "swell_period_s": _clean(row["swell_period_s"]),
         "wind_speed_kmh": _clean(row["wind_speed_kmh"]),
         "offshore_component": _clean(feats["offshore_component"].iloc[0]),
+        "sea_level_m": _clean(row["sea_level_m"]) if "sea_level_m" in row else None,
     }
 
 
@@ -45,18 +46,32 @@ def build_score_rows(df: pd.DataFrame, scorer: HeuristicScorer) -> list[dict]:
             "offshore_component": _clean(feats["offshore_component"].iloc[i]),
             "swell_direction_deg": _clean(df["swell_direction_deg"].iloc[i]),
             "wind_direction_deg": _clean(df["wind_direction_deg"].iloc[i]),
+            "sea_level_m": (
+                _clean(df["sea_level_m"].iloc[i]) if "sea_level_m" in df.columns else None
+            ),
         }
         for i in range(len(df))
     ]
 
 
 def build_forecast_rows(df: pd.DataFrame, scorer: HeuristicScorer) -> list[dict]:
-    explained = build_features(df).pipe(scorer.explain)
+    """Score every forecast hour for one spot, and add tide.
+
+    This is the one endpoint that can derive tide state and direction, because it holds a whole
+    ordered series for one spot. /scores has one row per spot, so it returns the raw level only.
+    """
+    ordered = add_tide_features(df)
+    explained = build_features(ordered).pipe(scorer.explain)
+    df = ordered
     rows: list[dict] = []
     for i in range(len(df)):
+        rising = df["tide_rising"].iloc[i]
         rows.append(
             {
                 "observed_at": df["observed_at"].iloc[i],
+                "sea_level_m": _clean(df["sea_level_m"].iloc[i]) if "sea_level_m" in df else None,
+                "tide_state": _clean(df["tide_state"].iloc[i]),
+                "tide_rising": None if pd.isna(rising) else bool(rising),
                 "score": _clean(explained["score"].iloc[i]),
                 "size": _clean(explained["size"].iloc[i]),
                 "period": _clean(explained["period"].iloc[i]),

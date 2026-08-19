@@ -33,11 +33,17 @@ class ScoreOut(BaseModel):
     # The raw bearings, so the UI can draw the geometry the score is built from.
     swell_direction_deg: float | None
     wind_direction_deg: float | None
+    # Tide height only: state and direction need neighbouring hours, which this endpoint lacks.
+    sea_level_m: float | None = None
 
 
 class ForecastHour(BaseModel):
     observed_at: datetime
     score: float | None
+    sea_level_m: float | None = None
+    #: 0 at low water, 1 at high. Normalised so it means the same at any spot and any tidal range.
+    tide_state: float | None = None
+    tide_rising: bool | None = None
     size: float | None
     period: float | None
     wind: float | None
@@ -61,6 +67,7 @@ class ConditionsAt(BaseModel):
     swell_period_s: float | None
     wind_speed_kmh: float | None
     offshore_component: float | None
+    sea_level_m: float | None = None
 
 
 class SessionIn(BaseModel):
