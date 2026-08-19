@@ -188,21 +188,27 @@ for ES256/JWKS verification in FastAPI, existing `before_surf` package for the t
 
 ### Task 7: training-set builder and label report
 
-- [ ] `before_surf.labels.build_training_set()`: join `sessions` to `conditions` on
-      `(spot_id, date_trunc('hour', surfed_at))`, prefer `source = 'archive'` and fall back to
-      `'forecast'`, run the existing `build_features`, and return features plus
+- [x] `before_surf.labels`: `build_training_set()` joins `surf_sessions` to `conditions` on
+      `(spot_id, date_trunc('hour', surfed_at))`, prefers `source = 'archive'` with a `'forecast'`
+      fallback, runs the existing `build_features`, and returns features plus
       `worth_it = rating >= 4` and a `label_source` column recording which conditions were used.
-- [ ] Reuse the existing feature code rather than reimplementing it. The whole reason `ml/` is an
-      installable package is to make training/serving skew impossible.
-- [ ] A report notebook (`ml/notebooks/label_report.py`) printing: total labels, class balance,
-      archive vs forecast split, labels per spot, labels per user, and how many were dropped for
-      missing conditions.
-- [ ] State the readiness bar explicitly so M8 is not started on hope: at least ~80 labels with both
-      classes above ~25% is a plausible floor for a first binary model. Under that, M8 is premature and
-      the honest move is to keep logging.
-- [ ] Tests: the join prefers archive over forecast, the binary collapse is correct at the 3/4
-      boundary, and sessions with no matching conditions are dropped rather than silently NaN-filled.
+      The join is a LEFT JOIN LATERAL so sessions with no conditions survive to be counted.
+- [x] Reuses the existing feature code. A test scores the training frame with `HeuristicScorer`
+      unchanged, which fails if the columns ever diverge: that is training/serving skew caught by CI
+      rather than discovered in M8.
+- [x] `ml/notebooks/label_report.py`, split into `report()` and `main()` so the populated branches can
+      be exercised on synthetic data instead of waiting for real labels to accumulate.
+- [x] Readiness bar stated in code, not prose: `MIN_LABELS = 80`, `MIN_MINORITY_SHARE = 0.25`, with
+      `readiness()` returning named blockers so a "no" says what is missing. Both bounds matter, and
+      a test proves a large but one-sided set is still refused.
+- [x] Tests (16): the 3/4 boundary parameterised across all five ratings, the archive preference
+      asserted **in the SQL text** (a Python-side sort could be dropped in a refactor and never
+      noticed), and unusable rows dropped-and-counted rather than filled.
 - [ ] **Commit:** `feat: add training-set builder and label report`
+
+**Current verdict, run against the live database: 0 labels, NOT READY.** That is the expected answer,
+and it is the milestone working rather than failing: the machinery to answer the question now exists,
+and the answer is honest.
 
 ### Task 8: docs, ADR and spec update
 
