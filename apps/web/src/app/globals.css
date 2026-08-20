@@ -70,8 +70,16 @@ body {
   font-family: var(--font-sans);
   font-size: var(--text-body);
   -webkit-font-smoothing: antialiased;
-  overflow: hidden;
   overscroll-behavior: none;
+}
+
+/* `overflow: hidden` used to live on body, because the map is a fixed-viewport app that must never
+   scroll the document. That was fine until a second kind of page existed: the spot report is taller
+   than the viewport, and a clipped body meant the bottom of it was simply unreachable. The rule now
+   belongs to the screen that wants it, applied by the map page itself. */
+.app-shell {
+  height: 100dvh;
+  overflow: hidden;
 }
 
 *:focus-visible {
@@ -210,6 +218,42 @@ body {
     border: 1px solid var(--color-hairline);
     border-radius: var(--radius-chip);
     padding: 0.625rem 0.75rem;
+    min-width: 0;
+  }
+  /* Three tiles share the width, and the label has to survive the longest word in either language.
+     "ONDULAÇÃO" is ten characters against "SWELL" at five, and at the default label tracking it was
+     clipped on a 390px phone. Smaller and tighter here only, so headings elsewhere keep their air. */
+  .stat .label {
+    font-size: var(--text-micro);
+    letter-spacing: 0.05em;
+    min-width: 0;
+  }
+
+  /* Breadcrumb: the way out of a spot report. Secondary weight, because it has to be findable
+     without competing with the spot name directly underneath it. */
+  .crumb {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: var(--text-meta);
+    font-weight: 600;
+    color: var(--color-secondary);
+    min-width: 0;
+    transition: color 0.15s ease;
+  }
+  .crumb:hover {
+    color: var(--color-accent);
+  }
+  .crumb-sep {
+    font-size: var(--text-meta);
+    color: var(--color-faint);
+  }
+  /* The current page. Faint and not a link, so the trail ends visibly rather than looking clickable. */
+  .crumb-here {
+    font-size: var(--text-meta);
+    font-weight: 500;
+    color: var(--color-faint);
+    min-width: 0;
   }
 
   /* A pill: the navbar and toolbar control shape. Rounded like everything else. */
@@ -435,7 +479,10 @@ body {
     background: var(--color-inset);
     color: var(--color-primary);
   }
-  .option[aria-selected="true"] {
+  /* Both, because a listbox marks its choice with aria-selected and a menu with aria-checked, and
+     the same row styling should serve either. */
+  .option[aria-selected="true"],
+  .option[aria-checked="true"] {
     background: color-mix(in srgb, var(--color-accent) 8%, var(--color-panel));
     color: var(--color-accent-ink);
     font-weight: 600;

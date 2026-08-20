@@ -86,14 +86,18 @@ function HomeInner() {
   // updates below, which deliberately do not re-run the router.
   const t = useTranslations("home");
   const words = useTranslations("score");
-  const initialSpot = useSearchParams().get("spot");
+  const params = useSearchParams();
+  const initialSpot = params.get("spot");
+  // The spot page's breadcrumb links here filtered to a region, so the filter has to be addressable.
+  // Read once for the same reason as the selection above: later typing owns the state, not the URL.
+  const initialQuery = params.get("q") ?? "";
   const [spots, setSpots] = useState<Spot[]>([]);
   const [scores, setScores] = useState<Record<string, ScoreNow>>({});
   const [picked, setPicked] = useState<string | null>(initialSpot);
   const [failed, setFailed] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [sheetTab, setSheetTab] = useState<"spot" | "list">("spot");
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState(initialQuery);
   const [hovered, setHovered] = useState<string | null>(null);
   const [logging, setLogging] = useState(false);
   const [sessionsOpen, setSessionsOpen] = useState(false);
@@ -150,7 +154,7 @@ function HomeInner() {
   }
 
   return (
-    <div className="grid h-full grid-rows-[auto_1fr]">
+    <div className="app-shell grid grid-rows-[auto_1fr]">
       <TopBar
         query={query}
         onQuery={setQuery}

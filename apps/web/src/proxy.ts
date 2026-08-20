@@ -3,6 +3,9 @@ import createMiddleware from "next-intl/middleware";
 import { routing } from "./i18n/routing";
 
 /**
+ * Renamed from middleware.ts: Next 16 deprecates that file convention in favour of proxy.ts, and the
+ * build says so on every run. Same default export, same behaviour.
+ *
  * Negotiates the locale: an explicit prefix wins, then the cookie next-intl sets when someone uses the
  * language switch, then `Accept-Language`, then Portuguese.
  *

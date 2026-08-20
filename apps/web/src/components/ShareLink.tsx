@@ -1,6 +1,9 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useState } from "react";
+
+import { ShareIcon } from "@/components/Icons";
 
 /**
  * Share this page: the native share sheet where one exists, copying to the clipboard otherwise.
@@ -9,6 +12,7 @@ import { useState } from "react";
  * server-rendered page. The content around it does not depend on JavaScript; only this button does.
  */
 export default function ShareLink({ title }: { title: string }) {
+  const t = useTranslations("spot");
   const [copied, setCopied] = useState(false);
 
   async function share() {
@@ -25,7 +29,8 @@ export default function ShareLink({ title }: { title: string }) {
 
   return (
     <button className="btn btn-quiet" onClick={share}>
-      {copied ? "Link copied" : "Share"}
+      <ShareIcon size={14} />
+      {copied ? t("linkCopied") : t("share")}
     </button>
   );
 }

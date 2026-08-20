@@ -204,9 +204,11 @@ class SupabaseRepository:
 # that override get_repository never build a pool at all.
 _pool: ConnectionPool | None = None
 
-# Deliberately well under the pooler's 15. The ingestion jobs and any ad-hoc script also need room,
-# and a single free-tier web instance has no use for more.
-POOL_MAX_SIZE = 6
+# Under the pooler's cap of 15, with room left for the ingestion jobs and any ad-hoc script. Raised
+# from 6 when prerendering grew from 96 pages to 189 (two locales): that is 378 requests at roughly
+# 500 ms each, and six connections could not drain them inside the checkout timeout. The limit is
+# throughput through the pool, not the database, whose part of that 500 ms is about 2 ms.
+POOL_MAX_SIZE = 10
 
 
 def get_pool() -> ConnectionPool:
@@ -219,7 +221,9 @@ def get_pool() -> ConnectionPool:
             min_size=1,
             max_size=POOL_MAX_SIZE,
             # Wait rather than fail when every connection is busy: a slow page beats a 500.
-            timeout=30.0,
+            # Generous, because a full prerender queues hundreds of requests behind a bounded pool,
+            # and a build failing at page 180 of 189 is worse than one taking another minute.
+            timeout=60.0,
             # The API sleeps on the free tier, so connections go stale while idle. Checking one out
             # costs a round trip but avoids handing a route a dead socket.
             check=ConnectionPool.check_connection,

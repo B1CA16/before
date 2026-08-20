@@ -71,6 +71,12 @@ export async function getForecastCached(slug: string, revalidate = 3600): Promis
   return (await res.json()) as ForecastHour[];
 }
 
+export async function getScoresCached(revalidate = 3600): Promise<ScoreNow[]> {
+  const res = await fetch(BASE + "/scores", { next: { revalidate } });
+  if (!res.ok) throw new Error("API /scores failed: " + res.status);
+  return (await res.json()) as ScoreNow[];
+}
+
 export async function getSpotsCached(revalidate = 3600): Promise<Spot[]> {
   const res = await fetch(BASE + "/spots", { next: { revalidate } });
   if (!res.ok) throw new Error("API /spots failed: " + res.status);

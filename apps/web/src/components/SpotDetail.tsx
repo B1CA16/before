@@ -5,23 +5,18 @@ import { useEffect, useState } from "react";
 
 import type { ForecastHour, ScoreNow, Spot } from "@/lib/api";
 import { getForecast } from "@/lib/api";
+import { ArrowIcon } from "@/components/Icons";
 import { Link } from "@/i18n/navigation";
-import { bestHour, formatHour, nextTideTurn, tideLabel, upcomingHours } from "@/lib/forecast";
+import { bestHour, formatHour, upcomingHours } from "@/lib/forecast";
 import { scoreColor, scoreLabel, scoreWordKey, windWordKey } from "@/lib/score";
+
+import ScoreBreakdown from "./ScoreBreakdown";
+import TidePanel from "./TidePanel";
 
 import Chip from "./Chip";
 import ScoreTimeline from "./ScoreTimeline";
 import SwellCompass from "./SwellCompass";
 import WaveLoader from "./WaveLoader";
-
-// Keys only. The displayed word is looked up per locale, so the table cannot drift from the
-// catalogue the way a hard-coded pair would.
-const FACTORS = [
-  ["size", "factorSize"],
-  ["period", "factorPeriod"],
-  ["wind", "factorWind"],
-  ["exposure", "factorExposure"],
-] as const;
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
@@ -29,100 +24,6 @@ function Stat({ label, value }: { label: string; value: string }) {
       <div className="label">{label}</div>
       <div className="value mt-1 text-primary">{value}</div>
     </div>
-  );
-}
-
-/**
- * Tide, deliberately shown and deliberately not scored.
- *
- * Surfers ask about tide before almost anything else, so leaving it out cost the product credibility.
- * It stays out of the BeFORE score though: scoring it needs to know which state each spot works best
- * at, which is per-spot bathymetry we do not have. Presenting it plainly lets a surfer apply their own
- * local knowledge, which is more honest than inventing a rule and hiding it inside a number.
- */
-function Tide({ hours, locale }: { hours: ForecastHour[]; locale: string }) {
-  const t = useTranslations("tide");
-  const ts = useTranslations("spot");
-  const now = hours[0];
-  if (!now || now.sea_level_m === null) return null;
-  const turn = nextTideTurn(hours);
-
-  return (
-    <section className="mt-4 border-t border-hairline pt-3.5">
-      <h3 className="section-title">{t("title")}</h3>
-      <div className="mt-2.5 flex items-baseline justify-between gap-3">
-        <span className="value text-primary">
-          {tideLabel(now.sea_level_m)}
-          {now.tide_rising !== null && (
-            <span className="meta ml-1.5 text-secondary">
-              {now.tide_rising ? t("rising") : t("falling")}
-            </span>
-          )}
-        </span>
-        {turn && (
-          <span className="text-meta text-faint">
-            {t(turn.kind)} {ts("at")}{" "}
-            <span className="font-semibold text-accent-ink">{formatHour(turn.at, locale)}</span>
-          </span>
-        )}
-      </div>
-      {/* A bar rather than a number, because "0.62 of the range" means nothing to a person. */}
-      {now.tide_state !== null && (
-        <div className="mt-2.5 flex items-center gap-2">
-          <span className="label flex-none">{t("lowLabel")}</span>
-          <span className="h-1 flex-1 overflow-hidden rounded-full bg-inset">
-            <span
-              className="block h-full rounded-full"
-              style={{
-                width: `${Math.round(now.tide_state * 100)}%`,
-                background: "var(--color-accent)",
-              }}
-            />
-          </span>
-          <span className="label flex-none">{t("highLabel")}</span>
-        </div>
-      )}
-    </section>
-  );
-}
-
-function Breakdown({ hour }: { hour: ForecastHour }) {
-  const t = useTranslations("spot");
-  const rows = FACTORS.map(([key, label]) => ({ key, label: t(label), value: hour[key] }));
-  const scored = rows.filter((r) => r.value !== null);
-  if (scored.length === 0) return null;
-  // The lowest factor is what caps the score, so it is the one worth naming.
-  const weakest = scored.reduce((a, b) => (b.value! < a.value! ? b : a));
-
-  return (
-    <section className="mt-4 border-t border-hairline pt-3.5">
-      <h3 className="section-title">{t("whyThisScore")}</h3>
-      <div className="mt-2.5 grid gap-2">
-        {rows.map(({ key, label, value }) => {
-          const isWeakest = key === weakest.key;
-          return (
-            <div key={key} className="grid grid-cols-[66px_1fr_30px] items-center gap-3">
-              <span className={`text-meta ${isWeakest ? "text-secondary" : "text-faint"}`}>
-                {label}
-              </span>
-              <span className="h-1 overflow-hidden rounded-full bg-inset">
-                <span
-                  className="block h-full rounded-full"
-                  style={{
-                    width: `${(value ?? 0) * 100}%`,
-                    background: isWeakest ? "var(--color-accent)" : "var(--color-edge)",
-                  }}
-                />
-              </span>
-              <span className="text-right text-meta font-semibold tabular-nums text-primary">
-                {value === null ? "-" : value.toFixed(2)}
-              </span>
-            </div>
-          );
-        })}
-      </div>
-      <p className="meta mt-3 text-faint">{t("weakest", { factor: weakest.label })}</p>
-    </section>
   );
 }
 
@@ -141,6 +42,7 @@ export default function SpotDetail({
   const t = useTranslations("spot");
   const words = useTranslations("score");
   const winds = useTranslations("wind");
+  const regions = useTranslations("regions");
   const locale = useLocale();
   const [hours, setHours] = useState<ForecastHour[]>([]);
   const [loading, setLoading] = useState(true);
@@ -168,7 +70,7 @@ export default function SpotDetail({
       <header className="flex items-start justify-between gap-4">
         <div className="min-w-0 pt-1">
           <h2 className="title truncate text-primary">{spot.name}</h2>
-          <p className="faint mt-0.5">{spot.region}</p>
+          <p className="faint mt-0.5">{regions.has(spot.region) ? regions(spot.region) : spot.region}</p>
           <div className="mt-2.5">
             <Chip color={scoreColor(score)}>{words(scoreWordKey(score))}</Chip>
           </div>
@@ -240,24 +142,26 @@ export default function SpotDetail({
         </section>
       )}
 
-      {upcoming.length > 0 && <Tide hours={upcoming} locale={locale} />}
+      {upcoming.length > 0 && <TidePanel hours={upcoming} locale={locale} />}
 
-      {upcoming.length > 0 && <Breakdown hour={upcoming[0]} />}
+      {upcoming.length > 0 && <ScoreBreakdown hour={upcoming[0]} />}
 
-      {permalink && (
-        <p className="mt-3 text-center">
-          <Link href={permalink} className="meta text-accent-ink underline">
-            {t("fullReport", { name: spot.name })}
-          </Link>
-        </p>
-      )}
-
-      {onLogSession && (
+            {(onLogSession || permalink) && (
         <section className="mt-4 border-t border-hairline pt-3.5">
-          <button className="btn btn-quiet w-full" onClick={onLogSession}>
-            {t("logHere")}
-          </button>
-          <p className="faint mt-2 text-center">{t("logHint")}</p>
+          <div className="grid gap-1.5">
+            {onLogSession && (
+              <button className="btn btn-primary w-full" onClick={onLogSession}>
+                {t("logHere")}
+              </button>
+            )}
+            {permalink && (
+              <Link href={permalink} className="btn btn-quiet w-full">
+                {t("viewFull")}
+                <ArrowIcon size={14} />
+              </Link>
+            )}
+          </div>
+          {onLogSession && <p className="faint mt-2 text-center">{t("logHint")}</p>}
         </section>
       )}
     </div>
