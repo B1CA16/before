@@ -16,6 +16,7 @@ from before_api.schemas import (
     SessionIn,
     SessionOut,
     SpotOut,
+    SpotWithScore,
 )
 from before_surf.config import get_settings
 from before_surf.scoring.heuristic import HeuristicScorer
@@ -50,6 +51,16 @@ def list_spots(repo: RepoDep):
 @app.get("/scores", response_model=list[ScoreOut])
 def scores(repo: RepoDep):
     return build_score_rows(repo.get_current_conditions(), _scorer)
+
+
+@app.get("/spots/{slug}", response_model=SpotWithScore)
+def spot_detail(slug: str, repo: RepoDep):
+    """One spot with its current score, for the server-rendered spot page."""
+    spot = repo.get_spot(slug)
+    if spot is None:
+        raise HTTPException(status_code=404, detail="spot not found")
+    rows = build_score_rows(repo.get_current_conditions(slug), _scorer)
+    return {"spot": spot, "now": rows[0] if rows else None}
 
 
 @app.get("/spots/{slug}/forecast", response_model=list[ForecastHour])

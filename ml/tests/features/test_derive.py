@@ -50,3 +50,43 @@ def test_build_features_adds_columns_and_propagates_nan():
     assert np.isnan(out["offshore_component"].iloc[1])
     # input is not mutated
     assert "offshore_component" not in df.columns
+
+
+def test_a_single_row_with_unknown_orientation_yields_nan_not_a_crash():
+    """Regression: this 500'd every spot page for a spot with no orientation.
+
+    A column that is entirely null in the frame arrives as object dtype holding None, and numpy trig
+    rejects object dtype rather than propagating NaN. It never showed on the 92-row /scores frame,
+    where real floats force float64, so only the per-spot path was affected.
+    """
+    one = pd.DataFrame(
+        [
+            {
+                "orientation_deg": None,
+                "wind_direction_deg": 20.0,
+                "swell_direction_deg": 310.0,
+                "swell_height_m": 1.2,
+                "swell_period_s": 9.0,
+                "wind_speed_kmh": 10.0,
+            }
+        ]
+    )
+    out = build_features(one)
+    assert pd.isna(out["offshore_component"].iloc[0])
+    assert pd.isna(out["swell_exposure"].iloc[0])
+
+
+def test_direction_columns_arriving_as_strings_are_coerced():
+    """Whatever the driver hands us, these are numbers or they are nothing."""
+    frame = pd.DataFrame(
+        [
+            {
+                "orientation_deg": "300",
+                "wind_direction_deg": "20",
+                "swell_direction_deg": "not a number",
+            }
+        ]
+    )
+    out = build_features(frame)
+    assert not pd.isna(out["offshore_component"].iloc[0])
+    assert pd.isna(out["swell_exposure"].iloc[0])

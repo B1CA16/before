@@ -1,12 +1,24 @@
-"""Data access for the API. All DB reads live here, injected into routes via Depends."""
+"""Data access for the API. All DB access lives here, injected into routes via Depends.
+
+Connections come from a pool, and that is a correctness requirement rather than an optimisation.
+Supabase's session-mode pooler caps a project at 15 clients. Opening a fresh connection per request
+exceeded that as soon as anything concurrent happened: prerendering 92 spot pages with six workers
+died with `EMAXCONNSESSION`, and a burst of real traffic would have done the same in production. The
+pool bounds us well below the cap and skips a TCP and TLS handshake per query as a side benefit.
+"""
 
 import pandas as pd
-import psycopg
+from psycopg_pool import ConnectionPool
 
 from before_surf.config import get_settings
 
 _SPOT_COLUMNS = "slug, name, region, latitude, longitude, orientation_deg"
 
+# Only hours still ahead. Old forecast rows are never pruned, so without this the endpoint returned
+# 816 rows where the interface uses 147, paying to build, validate and serialise each one: 184 KB
+# and 825 ms a request, against a query taking 2.3 ms. The database was never the bottleneck.
+# Sending
+# five times less matters most on the connection this gets used on, in a car park.
 _FORECAST_QUERY = """
 select c.observed_at, s.orientation_deg,
        c.swell_height_m, c.swell_period_s, c.swell_direction_deg,
@@ -14,10 +26,13 @@ select c.observed_at, s.orientation_deg,
 from conditions c
 join spots s on s.id = c.spot_id
 where s.slug = %(slug)s and c.source = 'forecast'
+  and c.observed_at >= now()
 order by c.observed_at
 """
 
 
+# One row per spot: the nearest forecast hour that has not already passed. The optional slug filter
+# lets a single spot page reuse the same query rather than scoring all 92 and discarding 91.
 _CURRENT_CONDITIONS_QUERY = """
 select distinct on (s.slug)
        s.slug, s.orientation_deg,
@@ -26,6 +41,7 @@ select distinct on (s.slug)
 from spots s
 join conditions c on c.spot_id = s.id and c.source = 'forecast'
 where c.observed_at >= now()
+  and (%(slug)s::text is null or s.slug = %(slug)s)
 order by s.slug, c.observed_at
 """
 
@@ -36,16 +52,16 @@ def _rows_as_dicts(cursor) -> list[dict]:
 
 
 class SupabaseRepository:
-    def __init__(self, database_url: str):
-        self.database_url = database_url
+    def __init__(self, pool: ConnectionPool):
+        self.pool = pool
 
     def list_spots(self) -> list[dict]:
-        with psycopg.connect(self.database_url) as conn:
+        with self.pool.connection() as conn:
             cur = conn.execute(f"select {_SPOT_COLUMNS} from spots order by name")
             return _rows_as_dicts(cur)
 
     def get_spot(self, slug: str) -> dict | None:
-        with psycopg.connect(self.database_url) as conn:
+        with self.pool.connection() as conn:
             cur = conn.execute(
                 f"select {_SPOT_COLUMNS} from spots where slug = %(slug)s", {"slug": slug}
             )
@@ -53,15 +69,15 @@ class SupabaseRepository:
         return rows[0] if rows else None
 
     def get_forecast(self, slug: str) -> pd.DataFrame:
-        with psycopg.connect(self.database_url) as conn:
+        with self.pool.connection() as conn:
             cur = conn.execute(_FORECAST_QUERY, {"slug": slug})
             columns = [desc.name for desc in cur.description]
             data = cur.fetchall()
         return pd.DataFrame(data, columns=columns)
 
-    def get_current_conditions(self) -> pd.DataFrame:
-        with psycopg.connect(self.database_url) as conn:
-            cur = conn.execute(_CURRENT_CONDITIONS_QUERY)
+    def get_current_conditions(self, slug: str | None = None) -> pd.DataFrame:
+        with self.pool.connection() as conn:
+            cur = conn.execute(_CURRENT_CONDITIONS_QUERY, {"slug": slug})
             columns = [desc.name for desc in cur.description]
             data = cur.fetchall()
         return pd.DataFrame(data, columns=columns)
@@ -75,7 +91,7 @@ class SupabaseRepository:
         Prefers `archive` over `forecast`, the same preference the training join will make: the
         archive is what the ocean did, the forecast is what we guessed it would do.
         """
-        with psycopg.connect(self.database_url) as conn:
+        with self.pool.connection() as conn:
             cur = conn.execute(
                 """
                 select c.observed_at, c.source, s.orientation_deg,
@@ -116,7 +132,7 @@ class SupabaseRepository:
         Upsert rather than insert so a double submit edits instead of duplicating, matching the
         PUT-not-POST idempotency the conditions ingestion uses.
         """
-        with psycopg.connect(self.database_url) as conn:
+        with self.pool.connection() as conn:
             cur = conn.execute(
                 """
                 insert into surf_sessions (user_id, spot_id, surfed_at, rating, tags, note)
@@ -142,7 +158,7 @@ class SupabaseRepository:
         return rows[0]
 
     def list_sessions(self, user_id: str) -> list[dict]:
-        with psycopg.connect(self.database_url) as conn:
+        with self.pool.connection() as conn:
             cur = conn.execute(
                 """
                 select ss.id, sp.slug, sp.name, ss.surfed_at, ss.rating, ss.tags, ss.note
@@ -166,7 +182,7 @@ class SupabaseRepository:
         access via DATABASE_URL, whereas the admin route would mean adding a service-role key: one
         more highly privileged secret that bypasses row level security, for no extra capability.
         """
-        with psycopg.connect(self.database_url) as conn:
+        with self.pool.connection() as conn:
             cur = conn.execute("delete from auth.users where id = %(id)s", {"id": user_id})
             return cur.rowcount > 0
 
@@ -176,7 +192,7 @@ class SupabaseRepository:
         False covers both "no such session" and "someone else's session", on purpose: the caller
         cannot use the response to learn that another user's session exists.
         """
-        with psycopg.connect(self.database_url) as conn:
+        with self.pool.connection() as conn:
             cur = conn.execute(
                 "delete from surf_sessions where id = %(id)s and user_id = %(user_id)s",
                 {"id": session_id, "user_id": user_id},
@@ -184,7 +200,33 @@ class SupabaseRepository:
             return cur.rowcount > 0
 
 
+# Module-level and lazily opened, so importing this module never touches the network and the tests
+# that override get_repository never build a pool at all.
+_pool: ConnectionPool | None = None
+
+# Deliberately well under the pooler's 15. The ingestion jobs and any ad-hoc script also need room,
+# and a single free-tier web instance has no use for more.
+POOL_MAX_SIZE = 6
+
+
+def get_pool() -> ConnectionPool:
+    global _pool
+    if _pool is None:
+        settings = get_settings()
+        assert settings.database_url, "DATABASE_URL is not set"
+        _pool = ConnectionPool(
+            settings.database_url,
+            min_size=1,
+            max_size=POOL_MAX_SIZE,
+            # Wait rather than fail when every connection is busy: a slow page beats a 500.
+            timeout=30.0,
+            # The API sleeps on the free tier, so connections go stale while idle. Checking one out
+            # costs a round trip but avoids handing a route a dead socket.
+            check=ConnectionPool.check_connection,
+            open=True,
+        )
+    return _pool
+
+
 def get_repository() -> SupabaseRepository:
-    settings = get_settings()
-    assert settings.database_url, "DATABASE_URL is not set"
-    return SupabaseRepository(settings.database_url)
+    return SupabaseRepository(get_pool())

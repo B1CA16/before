@@ -25,8 +25,16 @@ def build_features(df: pd.DataFrame) -> pd.DataFrame:
     not like that; see `add_tide_features`.
     """
     out = df.copy()
-    out["offshore_component"] = offshore_component(df["wind_direction_deg"], df["orientation_deg"])
-    out["swell_exposure"] = swell_exposure(df["swell_direction_deg"], df["orientation_deg"])
+    # Coerced to numeric first, and that is a bug fix rather than tidiness. A column that is wholly
+    # null in this frame arrives as object dtype holding None, and numpy trig rejects object dtype
+    # outright ("no callable radians method") instead of propagating NaN. It only shows on small
+    # frames: across 92 spots the column has real floats so pandas infers float64, which is why only
+    # a single spot page, for one of the spots with no orientation, ever broke.
+    orientation = pd.to_numeric(df["orientation_deg"], errors="coerce")
+    wind = pd.to_numeric(df["wind_direction_deg"], errors="coerce")
+    swell = pd.to_numeric(df["swell_direction_deg"], errors="coerce")
+    out["offshore_component"] = offshore_component(wind, orientation)
+    out["swell_exposure"] = swell_exposure(swell, orientation)
     return out
 
 

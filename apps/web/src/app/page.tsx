@@ -1,7 +1,8 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useMemo, useState } from "react";
 
 import AuthMenu from "@/components/AuthMenu";
 import Chip from "@/components/Chip";
@@ -70,10 +71,13 @@ function TopBar({
   );
 }
 
-export default function Home() {
+function HomeInner() {
+  // Read once for the initial selection. Reading it on every render would fight the shallow URL
+  // updates below, which deliberately do not re-run the router.
+  const initialSpot = useSearchParams().get("spot");
   const [spots, setSpots] = useState<Spot[]>([]);
   const [scores, setScores] = useState<Record<string, ScoreNow>>({});
-  const [picked, setPicked] = useState<string | null>(null);
+  const [picked, setPicked] = useState<string | null>(initialSpot);
   const [failed, setFailed] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [sheetTab, setSheetTab] = useState<"spot" | "list">("spot");
@@ -128,6 +132,9 @@ export default function Home() {
     setPicked(slug);
     setSheetTab("spot");
     setSheetOpen(true);
+    // replaceState rather than router.push: the map should not remount, and a selection is not a
+    // separate history entry to press Back through. The URL still becomes copyable, which is the point.
+    window.history.replaceState(null, "", `/?spot=${slug}`);
   }
 
   return (
@@ -235,6 +242,7 @@ export default function Home() {
                   spot={selectedSpot}
                   now={scores[selectedSpot.slug]}
                   onLogSession={() => setLogging(true)}
+                  permalink={`/spot/${selectedSpot.slug}`}
                 />
               </div>
             </div>
@@ -300,6 +308,7 @@ export default function Home() {
                       spot={selectedSpot}
                       now={scores[selectedSpot.slug]}
                       onLogSession={() => setLogging(true)}
+                      permalink={`/spot/${selectedSpot.slug}`}
                     />
                   ) : (
                     <div className="pb-1">
@@ -346,5 +355,17 @@ export default function Home() {
         />
       )}
     </div>
+  );
+}
+
+/**
+ * useSearchParams opts a route into dynamic rendering unless it sits inside Suspense, so the boundary
+ * is what keeps this page prerenderable at build time.
+ */
+export default function Home() {
+  return (
+    <Suspense fallback={null}>
+      <HomeInner />
+    </Suspense>
   );
 }

@@ -97,22 +97,38 @@ Inserting this milestone shifts the ML work back. Update section 11 of the spec:
 
 ### Task 2: routes, deep links and server rendering
 
-- [ ] State the problem plainly first: `app/page.tsx` is one big client component, so the served HTML
-      contains no spots, no scores and no text. There is exactly one route (`/` and `/_not-found`).
-      Nothing can be linked to and nothing can be indexed. SEO is not a metadata problem here, it is a
-      rendering problem.
-- [ ] Add `app/spot/[slug]/page.tsx` as a **server component**: fetches that spot and its forecast on
-      the server, renders name, region, score, conditions and the explanation as real HTML.
-- [ ] Keep the map a client island (`ssr: false`), because Leaflet needs `window`. The point is that the
-      content around it no longer depends on JavaScript.
-- [ ] `generateStaticParams` over the spot list, with `revalidate` matched to the ingestion cadence.
-- [ ] **This closes the deferred item in ADR-0004.** Server-rendered pages with revalidation are cached
-      by Vercel, so a visitor is not waiting on a Render cold start. Note that in the ADR.
-- [ ] Selecting a spot on the map updates the URL, and loading a spot URL selects it on the map.
-- [ ] A share affordance on the spot panel: copy link, and the Web Share API on mobile where available.
-- [ ] Verify with `curl` that the HTML actually contains the spot name and score. If it does not, the
-      task is not done, whatever the browser shows.
+- [x] Problem measured before being fixed: the live site served **37,872 bytes and 29 visible words**,
+      with not one of the 92 spot names in it. SEO was never a metadata problem here.
+- [x] `app/spot/[slug]/page.tsx` as a server component, plus a new `GET /spots/{slug}` so the page needs
+      one request rather than fetching all 92 and discarding 91.
+- [x] Map stays a client island; `ShareLink` is the only client leaf on the spot page.
+- [x] `generateStaticParams` over all 92 spots, `revalidate = 3600`. Chosen from the data: conditions
+      are ingested daily, but the "current" hour advances hourly, so hourly is the coarsest that stays
+      truthful. Build output confirms 96/96 pages prerendered in 18.5s.
+- [x] **ADR-0004 updated.** The deferred edge-caching item is done for spot pages. The ping still
+      matters for the map and for authenticated calls, so the ADR stands with a smaller blast radius.
+- [x] URL round-trip via `history.replaceState`, verified: `?spot=` opens focused, selecting rewrites
+      the URL, and history length stays at 2 so Back does not walk through selections.
+- [x] Share via the Web Share API with a clipboard fallback, plus a permalink from the map panel.
+- [x] **Verified with curl**: 134 visible words, `<h1>Praia dos Coxos</h1>`, a data-built description
+      ("marginal right now, scoring 4.7 out of 10"), and a canonical URL.
 - [ ] **Commit:** `feat: add server-rendered spot pages and deep links`
+
+> **Two real bugs surfaced by doing this, both pre-existing and neither cosmetic.**
+>
+> 1. **`/spots/{slug}` 500'd for 7 of 92 spots.** A frame whose `orientation_deg` is wholly null arrives
+>    as object dtype, and numpy trig rejects object dtype rather than propagating NaN. Invisible on the
+>    92-row `/scores` frame, where real floats force float64. Fixed in `build_features` with
+>    `pd.to_numeric(..., errors="coerce")`, plus two regression tests.
+> 2. **The API opened a new database connection per request.** Prerendering with six workers hit
+>    `EMAXCONNSESSION: max clients limited to pool_size: 15`. Fixed with a bounded `ConnectionPool`
+>    (max 6). Verified with 60 concurrent heavy requests, all 200. This would have broken production
+>    under any traffic burst.
+>
+> And one deferred item pulled forward because it became the blocker: the forecast endpoint returned
+> **816 rows where the UI uses 147**, costing 184 KB and 825 ms per request against a query taking
+> 2.3 ms. The database was never the bottleneck; building, validating and serialising rows nobody reads
+> was. Now 34 KB and ~515 ms.
 
 ### Task 3: Portuguese
 

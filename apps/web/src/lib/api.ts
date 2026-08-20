@@ -44,7 +44,38 @@ async function getJson<T>(path: string): Promise<T> {
   return res.json() as Promise<T>;
 }
 
+export type SpotWithScore = { spot: Spot; now: ScoreNow | null };
+
 export const getSpots = () => getJson<Spot[]>("/spots");
+
+/**
+ * One spot and its current reading, in a single request.
+ *
+ * Used by the server-rendered spot page, so `revalidate` rather than `no-store`: the page is cached
+ * and served from the edge, which is also what stops a visitor waiting on a Render cold start.
+ */
+export async function getSpotWithScore(
+  slug: string,
+  revalidate = 3600
+): Promise<SpotWithScore | null> {
+  const res = await fetch(BASE + "/spots/" + slug, { next: { revalidate } });
+  if (res.status === 404) return null;
+  if (!res.ok) throw new Error("API /spots/" + slug + " failed: " + res.status);
+  return (await res.json()) as SpotWithScore;
+}
+
+/** Cached variants for server rendering, where no-store would defeat the point. */
+export async function getForecastCached(slug: string, revalidate = 3600): Promise<ForecastHour[]> {
+  const res = await fetch(BASE + "/spots/" + slug + "/forecast", { next: { revalidate } });
+  if (!res.ok) throw new Error("API forecast failed: " + res.status);
+  return (await res.json()) as ForecastHour[];
+}
+
+export async function getSpotsCached(revalidate = 3600): Promise<Spot[]> {
+  const res = await fetch(BASE + "/spots", { next: { revalidate } });
+  if (!res.ok) throw new Error("API /spots failed: " + res.status);
+  return (await res.json()) as Spot[];
+}
 export const getScores = () => getJson<ScoreNow[]>("/scores");
 export const getForecast = (slug: string) => getJson<ForecastHour[]>(`/spots/${slug}/forecast`);
 

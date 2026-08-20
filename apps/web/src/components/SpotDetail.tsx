@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import type { ForecastHour, ScoreNow, Spot } from "@/lib/api";
@@ -126,10 +127,13 @@ export default function SpotDetail({
   spot,
   now,
   onLogSession,
+  permalink,
 }: {
   spot: Spot;
   now?: ScoreNow;
   onLogSession?: () => void;
+  /** Link to the server-rendered page, which is the shareable and indexable address for this spot. */
+  permalink?: string;
 }) {
   const [hours, setHours] = useState<ForecastHour[]>([]);
   const [loading, setLoading] = useState(true);
@@ -227,6 +231,14 @@ export default function SpotDetail({
       {upcoming.length > 0 && <Tide hours={upcoming} />}
 
       {upcoming.length > 0 && <Breakdown hour={upcoming[0]} />}
+
+      {permalink && (
+        <p className="mt-3 text-center">
+          <Link href={permalink} className="meta text-accent-ink underline">
+            Open the full report for {spot.name}
+          </Link>
+        </p>
+      )}
 
       {onLogSession && (
         <section className="mt-4 border-t border-hairline pt-3.5">

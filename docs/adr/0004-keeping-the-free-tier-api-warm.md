@@ -76,3 +76,21 @@ Rejected alternatives:
   warm Python process. The durable fix is to cache score reads at the edge, since scores only change
   when the daily ingestion runs and are therefore stale by design for hours. Deferred, and worth
   doing before this ping becomes load-bearing.
+
+## Update, 2026-08-20: partly superseded
+
+M8 added server-rendered spot pages (`/spot/[slug]`) with `revalidate = 3600`. All 92 are prerendered
+at build time and cached by Vercel, so a visitor arriving at a spot page is served from the edge and
+never waits on Render at all. The deferred edge-caching work above is done for those pages, and it fell
+out of doing the rendering properly rather than needing its own effort.
+
+The keep-warm ping still matters, for what remains uncached: the map page fetches `/scores` and
+`/spots` in the browser, and every authenticated call (sessions, favourites) has to reach Render by
+definition. So this ADR stands, with a smaller blast radius: a cold start now degrades the map and
+signed-in actions rather than everything.
+
+Discovered while doing it, and worth recording because it constrains anything similar in future: the
+API was opening a **new database connection per request**. Prerendering 92 pages with six workers hit
+`EMAXCONNSESSION`, because Supabase's session-mode pooler caps a project at 15 clients. Fixed with a
+bounded `ConnectionPool` (max 6) in the repository. That bug was always present; concurrency merely
+made it visible, and a burst of real traffic would have found it eventually.

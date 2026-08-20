@@ -37,6 +37,13 @@ class ScoreOut(BaseModel):
     sea_level_m: float | None = None
 
 
+class SpotWithScore(BaseModel):
+    """One spot and its current reading, so a server-rendered page needs a single request."""
+
+    spot: SpotOut
+    now: ScoreOut | None
+
+
 class ForecastHour(BaseModel):
     observed_at: datetime
     score: float | None
