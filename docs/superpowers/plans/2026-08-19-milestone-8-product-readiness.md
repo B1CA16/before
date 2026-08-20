@@ -132,18 +132,38 @@ Inserting this milestone shifts the ML work back. Update section 11 of the spec:
 
 ### Task 3: Portuguese
 
-- [ ] Settle the library question above before writing anything.
-- [ ] Locale-prefixed routes (`/pt/...`, `/en/...`) with negotiation from `Accept-Language` and a
-      persisted override. Portuguese is the default for a Portuguese coast.
-- [ ] Extract every UI string. There are more than it looks: empty states, error messages, the privacy
-      note, confirmation copy, `aria-label`s.
-- [ ] Replace the pinned `UI_LOCALE` in `lib/forecast.ts` with the active locale. It was pinned to
-      `en-GB` in M6 precisely because the browser locale produced Portuguese day names in an English
-      interface; now that mismatch is the thing being fixed properly.
-- [ ] Language switch in the top bar, and `hreflang` on every page.
-- [ ] Verify: `npm run shots` in both languages. Portuguese is longer than English and will find every
-      layout that only fits its original copy.
+- [x] Settled: `next-intl` 4.13.7, which declares Next 16 support in its peer range.
+- [x] Routes moved under `app/[locale]/`, with `localePrefix: "as-needed"`: Portuguese keeps the bare
+      paths and English is prefixed. Chosen for a concrete reason rather than taste, since spot links
+      have already been shared and always-prefixing would turn every one into a redirect.
+- [x] 170 message keys per locale, asserted to have exact parity. Covers the parts that get forgotten:
+      empty states, error messages, confirmation copy, `aria-label`s and the privacy note.
+- [x] `UI_LOCALE` replaced by `localeTag(locale)`. The pin to `en-GB` existed because the *browser*
+      locale produced Portuguese day names inside an English interface; a real locale switch is the
+      proper fix for that mismatch, so the workaround could go.
+- [x] **Score verdicts and wind labels now return keys, not words** (`scoreWordKey`, `windWordKey`).
+      The thresholds are a product decision and stay in `lib/score.ts`; the wording lives in the
+      catalogues. A test asserts every key either function can emit exists in both languages, so a
+      raw key like "firing" can never reach a user.
+- [x] `LanguageSwitch` in the top bar. It replaces the current route in the other locale, carrying the
+      query string, so switching language does not lose the spot you were reading.
+- [x] `hreflang` on the home and spot pages via `alternates.languages`, plus a locale-correct canonical.
+- [x] Verified: **189 pages prerendered** (92 spots x 2 locales, plus both home pages). Portuguese
+      renders `lang="pt"`, translated metadata, "de mar" for onshore, "MARE +0.0 m a encher", and
+      Portuguese weekday names in the chart.
 - [ ] **Commit:** `feat: add portuguese and locale routing`
+
+> **The bug worth recording.** `/spot/praia-dos-coxos` 404'd, which is exactly the case `as-needed` was
+> chosen to protect. The middleware matcher `"/((?!api|_next|_vercel|.*\..*).*)"` only ever matched `/`
+> and one segment: matcher strings are parsed by path-to-regexp, where `.` does not cross the `/`
+> delimiter, so `.*` stops at the first slash. It is invisible until a nested URL 404s, and the widely
+> copied one-line matcher has this hole. Fixed with an explicit array including `:path*`, and verified
+> across five paths: bare links rewrite to `/pt/...`, `/pt/...` redirects away the redundant prefix,
+> and an unknown slug still 404s.
+>
+> Two of my own checks also lied and are worth remembering: `hreflang` looked missing because Next
+> emits the attribute as `hrefLang` and my regex was case-sensitive, and accented strings looked absent
+> because of Windows stdin decoding, not because they were missing.
 
 ### Task 4: privacy policy and terms
 

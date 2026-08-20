@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import AnchoredPanel from "@/components/AnchoredPanel";
@@ -78,6 +79,7 @@ export default function Select({
   minWidth?: number;
   disabled?: boolean;
 }) {
+  const t = useTranslations("select");
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   // Held in state, not a ref: the panel needs this element during render, and state is what
@@ -132,7 +134,7 @@ export default function Select({
         disabled={disabled}
         onClick={() => setOpen((v) => !v)}
       >
-        <span className="truncate">{current?.label ?? "Select"}</span>
+        <span className="truncate">{current?.label ?? t("placeholder")}</span>
         <Chevron />
       </button>
 
@@ -140,7 +142,7 @@ export default function Select({
         <AnchoredPanel anchorEl={triggerEl} minWidth={minWidth} onDismiss={() => setOpen(false)}>
           <div className="panel-raised p-2">
             {searchable && (
-              <label className="field mb-1.5" aria-label={`Filter ${label}`}>
+              <label className="field mb-1.5" aria-label={`${t("filter")} ${label}`}>
                 <svg
                   width="13"
                   height="13"
@@ -166,7 +168,7 @@ export default function Select({
                 <input
                   ref={search}
                   type="search"
-                  placeholder="Filter"
+                  placeholder={t("filter")}
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                 />
@@ -180,7 +182,7 @@ export default function Select({
               className="scroll-inset max-h-56 overflow-y-auto"
             >
               {shown.length === 0 ? (
-                <p className="faint px-3 py-4">Nothing matches that.</p>
+                <p className="faint px-3 py-4">{t("nothingMatches")}</p>
               ) : (
                 shown.map((option) => {
                   const selected = option.value === value;

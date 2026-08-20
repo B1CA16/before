@@ -1,5 +1,6 @@
 "use client";
 
+import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 
 import { useAuth } from "@/components/AuthProvider";
@@ -11,14 +12,13 @@ import {
   getConditionsAt,
   logSession,
   SESSION_TAGS,
-  TAG_LABELS,
   type ConditionsAt,
   type SessionRow,
   type SessionTag,
   type Spot,
 } from "@/lib/api";
-import { UI_LOCALE } from "@/lib/forecast";
-import { SCORE_COLORS, scoreColor, scoreLabel, windLabel } from "@/lib/score";
+import { localeTag } from "@/lib/forecast";
+import { SCORE_COLORS, scoreColor, scoreLabel, windWordKey } from "@/lib/score";
 
 /**
  * Log a surfed session and rate it. This is where labels come from, so a few things are deliberate:
@@ -46,11 +46,12 @@ function onTheHour(date: Date): Date {
   return d;
 }
 
-function formatDay(date: Date): string {
-  return date.toLocaleDateString(UI_LOCALE, { weekday: "short", day: "numeric", month: "short" });
+function formatDay(date: Date, tag: string): string {
+  return date.toLocaleDateString(tag, { weekday: "short", day: "numeric", month: "short" });
 }
 
-const RATING_HINTS = ["Not worth it", "Poor", "Okay", "Good", "Excellent"];
+// Keys, resolved where they are rendered, so the wording lives in the catalogues.
+const RATING_HINT_KEYS = ["rating1", "rating2", "rating3", "rating4", "rating5"] as const;
 
 const HOUR_OPTIONS = Array.from({ length: 24 }, (_, h) => ({
   value: String(h),
@@ -61,7 +62,7 @@ const HOUR_OPTIONS = Array.from({ length: 24 }, (_, h) => ({
  * Shortcuts for when a session actually happened. Almost every entry is today or yesterday, morning
  * or evening, so these cover the common cases in one tap and leave the picker for the long tail.
  */
-function presets(now: Date): { label: string; at: Date }[] {
+function presets(now: Date): { key: string; at: Date }[] {
   const at = (daysAgo: number, hour: number) => {
     const d = new Date(now);
     d.setDate(d.getDate() - daysAgo);
@@ -71,11 +72,11 @@ function presets(now: Date): { label: string; at: Date }[] {
   // Three, so they sit on one row. A fourth wrapped onto a line of its own and read as a mistake.
   // These are the cases that actually occur: just got out, surfed at dawn and logging later, or
   // catching up on yesterday. Anything else is a few taps in the field below.
-  const out = [{ label: "Now", at: onTheHour(now) }];
+  const out = [{ key: "now", at: onTheHour(now) }];
   const thisMorning = at(0, 8);
   // Only offer this morning once it has actually happened.
-  if (thisMorning <= now) out.push({ label: "This morning", at: thisMorning });
-  out.push({ label: "Yesterday", at: at(1, 8) });
+  if (thisMorning <= now) out.push({ key: "thisMorning", at: thisMorning });
+  out.push({ key: "yesterday", at: at(1, 8) });
   return out;
 }
 
@@ -93,6 +94,13 @@ export default function LogSessionSheet({
   onClose: () => void;
   onLogged?: () => void;
 }) {
+  const t = useTranslations("log");
+  const tTags = useTranslations("tags");
+  const tAuth = useTranslations("auth");
+  const tSpot = useTranslations("spot");
+  const winds = useTranslations("wind");
+  const locale = useLocale();
+  const tag = localeTag(locale);
   const { user, getToken } = useAuth();
   // Editing needs no separate endpoint: POST upserts on (user, spot, surfed_at), so re-submitting the
   // same key updates. The consequence is that spot and time are the session's identity, so they are
@@ -161,7 +169,7 @@ export default function LogSessionSheet({
     try {
       const token = await getToken();
       if (!token) {
-        setError("Your session has expired. Sign in again to continue.");
+        setError(tAuth("expired"));
         return;
       }
       // toISOString carries the offset, which the API requires: a timestamp without one would have
@@ -176,7 +184,7 @@ export default function LogSessionSheet({
       setDone(true);
       onLogged?.();
     } catch (submitError) {
-      setError(submitError instanceof Error ? submitError.message : "Could not save that session.");
+      setError(submitError instanceof Error ? submitError.message : t("saveFailed"));
     } finally {
       setBusy(false);
     }
@@ -197,41 +205,35 @@ export default function LogSessionSheet({
       <button
         className="absolute inset-0 cursor-default bg-[rgba(16,24,40,0.45)]"
         onClick={onClose}
-        aria-label="Close"
+        aria-label={t("cancel")}
         tabIndex={-1}
       />
 
       <div
         role="dialog"
         aria-modal="true"
-        aria-label="Log a session"
+        aria-label={t("title")}
         className="panel-raised relative w-full max-w-[26rem] rounded-b-none p-1 sm:rounded-panel"
       >
         <div className="scroll-inset max-h-[86dvh] overflow-y-auto px-4 py-4">
           <header className="flex items-start justify-between gap-3">
             <div>
               <h2 className="title text-primary">
-                {done ? "Saved" : editing ? "Edit session" : "Log a session"}
+                {done ? t("savedTitle") : editing ? t("editTitle") : t("title")}
               </h2>
               <p className="faint mt-0.5">
-                {done
-                  ? editing
-                    ? "That rating is updated."
-                    : "Thanks, that is one more label."
-                  : editing
-                    ? "Change how you rated it."
-                    : "Rate one you actually surfed."}
+                {done ? (editing ? t("updated") : t("thanks")) : editing ? t("editSubtitle") : t("subtitle")}
               </p>
             </div>
             <button className="btn btn-quiet flex-none px-3" onClick={onClose}>
-              {done ? "Done" : "Cancel"}
+              {done ? t("done") : t("cancel")}
             </button>
           </header>
 
           {!user ? (
             <div className="mt-4">
               <p className="meta text-secondary">
-                Sign in first, so your sessions are saved to your account and stay private to you.
+                {t("signInFirst")}
               </p>
               <div className="mt-3">
                 <GoogleSignIn />
@@ -240,24 +242,24 @@ export default function LogSessionSheet({
           ) : done ? (
             <div className="mt-4">
               <p className="meta text-secondary">
-                {spotName}, rated {rating} out of 5. It is now part of what the model will learn from.
+                {t("ratedSummary", { name: spotName, rating: rating ?? 0 })}
               </p>
               {!editing && (
                 <button className="btn btn-primary mt-3 w-full" onClick={logAnother}>
-                  Log another
+                  {t("logAnother")}
                 </button>
               )}
             </div>
           ) : (
             <form onSubmit={submit} className="mt-4">
               <label className="label block" htmlFor="session-spot">
-                Spot
+                {t("spot")}
               </label>
               {/* Searchable: there are 92 spots, and scrolling to find one is not a select. */}
               <Select
                 id="session-spot"
                 className="mt-1.5"
-                label="Spot"
+                label={t("spot")}
                 searchable
                 disabled={editing}
                 value={slug}
@@ -266,12 +268,12 @@ export default function LogSessionSheet({
               />
 
               <label className="label mt-3.5 block" htmlFor="session-when">
-                When
+                {t("when")}
               </label>
               <div className="mt-1.5 flex flex-wrap gap-1.5">
                 {presets(new Date()).map((p) => (
                   <button
-                    key={p.label}
+                    key={p.key}
                     type="button"
                     className="toggle"
                     disabled={editing}
@@ -281,7 +283,7 @@ export default function LogSessionSheet({
                       setCalendarOpen(false);
                     }}
                   >
-                    {p.label}
+                    {t(p.key)}
                   </button>
                 ))}
               </div>
@@ -296,7 +298,7 @@ export default function LogSessionSheet({
                   disabled={editing}
                   onClick={() => setCalendarOpen((v) => !v)}
                 >
-                  <span className="truncate">{formatDay(when)}</span>
+                  <span className="truncate">{formatDay(when, tag)}</span>
                   <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden>
                     <rect
                       x="2.25"
@@ -320,7 +322,7 @@ export default function LogSessionSheet({
                     data does not have. */}
                 <Select
                   className="w-28 flex-none"
-                  label="Hour"
+                  label={t("hour")}
                   minWidth={132}
                   disabled={editing}
                   value={String(when.getHours())}
@@ -349,19 +351,17 @@ export default function LogSessionSheet({
               </div>
 
               <p className="faint mt-1.5">
-                {editing
-                  ? "Spot and time identify a session, so they cannot be changed here. Delete it and log it again to move it."
-                  : "Any past date. Older sessions count just as much."}
+                {editing ? t("identityLocked") : t("anyPastDate")}
               </p>
 
               {/* What we hold for that hour, so a wrong date is caught before it becomes a label. */}
               <div className="mt-2.5 rounded-chip bg-inset p-3">
                 {checking ? (
-                  <p className="faint">Checking the conditions for that hour</p>
+                  <p className="faint">{t("checkingConditions")}</p>
                 ) : conditions ? (
                   <>
                     <div className="flex items-center justify-between gap-3">
-                      <span className="label">On record</span>
+                      <span className="label">{t("onRecord")}</span>
                       <span
                         className="text-meta font-bold tabular-nums"
                         style={{ color: scoreColor(conditions.score) }}
@@ -370,26 +370,21 @@ export default function LogSessionSheet({
                       </span>
                     </div>
                     <p className="meta mt-1.5 text-secondary">
-                      {conditions.swell_height_m?.toFixed(1) ?? "-"} m at{" "}
+                      {conditions.swell_height_m?.toFixed(1) ?? "-"} m {tSpot("at")}{" "}
                       {conditions.swell_period_s?.toFixed(1) ?? "-"} s,{" "}
-                      {windLabel(conditions.offshore_component)}
+                      {winds(windWordKey(conditions.offshore_component))}
                     </p>
                     <p className="faint mt-1">
-                      {conditions.source === "archive"
-                        ? "Measured conditions."
-                        : "Forecast conditions, not yet confirmed by the archive."}
+                      {conditions.source === "archive" ? t("measured") : t("forecastOnly")}
                     </p>
                   </>
                 ) : (
-                  <p className="meta text-secondary">
-                    We hold no conditions for that hour, so this session cannot train the model. Log
-                    it anyway if you like, or check the date.
-                  </p>
+                  <p className="meta text-secondary">{t("noConditions")}</p>
                 )}
               </div>
 
               <fieldset className="mt-4">
-                <legend className="label">How was it</legend>
+                <legend className="label">{t("howWasIt")}</legend>
                 <div className="mt-1.5 flex gap-1.5">
                   {[1, 2, 3, 4, 5].map((value) => (
                     <button
@@ -404,37 +399,37 @@ export default function LogSessionSheet({
                   ))}
                 </div>
                 <p className="faint mt-1.5">
-                  {rating === null ? "1 is not worth it, 5 is excellent." : RATING_HINTS[rating - 1]}
+                  {rating === null ? t("ratingHint") : t(RATING_HINT_KEYS[rating - 1])}
                 </p>
               </fieldset>
 
               <fieldset className="mt-4">
                 <legend className="label">
-                  What stood out <span className="text-faint">(optional)</span>
+                  {t("whatStoodOut")} <span className="text-faint">({t("optional")})</span>
                 </legend>
                 <div className="mt-1.5 flex flex-wrap gap-1.5">
-                  {SESSION_TAGS.map((tag) => (
+                  {SESSION_TAGS.map((name) => (
                     <button
-                      key={tag}
+                      key={name}
                       type="button"
-                      onClick={() => toggleTag(tag)}
-                      aria-pressed={tags.includes(tag)}
+                      onClick={() => toggleTag(name)}
+                      aria-pressed={tags.includes(name)}
                       className="toggle"
                     >
-                      {TAG_LABELS[tag]}
+                      {tTags(name)}
                     </button>
                   ))}
                 </div>
               </fieldset>
 
               <label className="label mt-4 block" htmlFor="session-note">
-                Note
+                {t("note")}
               </label>
               <textarea
                 id="session-note"
                 className="control mt-1.5 min-h-16"
                 maxLength={500}
-                placeholder="Optional"
+                placeholder={t("notePlaceholder")}
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
               />
@@ -444,9 +439,9 @@ export default function LogSessionSheet({
                 className="btn btn-primary mt-4 w-full"
                 disabled={busy || rating === null}
               >
-                {busy ? "Saving" : editing ? "Save changes" : "Log this session"}
+                {busy ? t("saving") : editing ? t("saveChanges") : t("submit")}
               </button>
-              {rating === null && <p className="faint mt-1.5 text-center">Pick a rating first.</p>}
+              {rating === null && <p className="faint mt-1.5 text-center">{t("pickRating")}</p>}
 
               {error && (
                 <p className="meta mt-2" style={{ color: SCORE_COLORS.flat }} role="alert">

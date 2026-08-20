@@ -11,20 +11,22 @@ import {
 } from "recharts";
 
 import type { ForecastHour } from "@/lib/api";
-import { bestHour, UI_LOCALE } from "@/lib/forecast";
+import { useLocale } from "next-intl";
+
+import { bestHour, localeTag } from "@/lib/forecast";
 import { scoreLabel } from "@/lib/score";
 
 type Point = { iso: string; day: string; clock: string; score: number };
 
-function toPoints(hours: ForecastHour[]): Point[] {
+function toPoints(hours: ForecastHour[], tag: string): Point[] {
   return hours
     .filter((h) => h.score !== null)
     .map((h) => {
       const d = new Date(h.observed_at);
       return {
         iso: h.observed_at,
-        day: d.toLocaleDateString(UI_LOCALE, { weekday: "short" }),
-        clock: d.toLocaleTimeString(UI_LOCALE, { hour: "2-digit", minute: "2-digit" }),
+        day: d.toLocaleDateString(tag, { weekday: "short" }),
+        clock: d.toLocaleTimeString(tag, { hour: "2-digit", minute: "2-digit" }),
         score: h.score as number,
       };
     });
@@ -45,7 +47,8 @@ function ChartTooltip({ active, payload }: { active?: boolean; payload?: { paylo
 
 /** One series, so no legend: the section heading names it. No gridlines, no y-axis furniture. */
 export default function ScoreTimeline({ hours }: { hours: ForecastHour[] }) {
-  const data = toPoints(hours);
+  const tag = localeTag(useLocale());
+  const data = toPoints(hours, tag);
   if (data.length === 0) return null;
 
   const best = bestHour(hours);
@@ -66,7 +69,7 @@ export default function ScoreTimeline({ hours }: { hours: ForecastHour[] }) {
             dataKey="iso"
             ticks={dayTicks}
             tickFormatter={(iso: string) =>
-              new Date(iso).toLocaleDateString(UI_LOCALE, { weekday: "short" })
+              new Date(iso).toLocaleDateString(tag, { weekday: "short" })
             }
             tick={{ fill: "var(--color-faint)", fontSize: 10, fontWeight: 600 }}
             axisLine={false}

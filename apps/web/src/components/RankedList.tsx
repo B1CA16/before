@@ -3,6 +3,8 @@
 import type { ScoreNow, Spot } from "@/lib/api";
 import { scoreColor, scoreLabel } from "@/lib/score";
 
+import { useTranslations } from "next-intl";
+
 import WaveLoader from "./WaveLoader";
 
 /** The two numbers that decide everything: size and period. */
@@ -26,8 +28,9 @@ export default function RankedList({
   onSelect: (slug: string) => void;
   onHover: (slug: string | null) => void;
 }) {
+  const t = useTranslations("map");
   if (spots.length === 0) {
-    return <WaveLoader label="Finding spots" className="py-8" />;
+    return <WaveLoader label={t("findingSpots")} className="py-8" />;
   }
 
   return (

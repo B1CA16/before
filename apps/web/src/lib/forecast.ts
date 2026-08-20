@@ -16,12 +16,20 @@ export function bestHour(hours: ForecastHour[]): ForecastHour | null {
   return best;
 }
 
-// The interface is written in English, so dates are formatted in English too rather than
-// following the browser locale, which produced Portuguese day names inside an English UI.
-export const UI_LOCALE = "en-GB";
+/**
+ * The BCP 47 tag to format dates with, for a given app locale.
+ *
+ * `UI_LOCALE` used to be pinned to `en-GB`, because following the *browser* locale produced Portuguese
+ * day names inside an English interface. That was the right fix for an English-only app and the wrong
+ * one now: the mismatch it prevented is exactly what a real locale switch fixes properly. Dates now
+ * follow the chosen language rather than the browser's guess or a hard-coded constant.
+ */
+export function localeTag(locale: string): string {
+  return locale === "pt" ? "pt-PT" : "en-GB";
+}
 
-export function formatHour(iso: string): string {
-  return new Date(iso).toLocaleString(UI_LOCALE, {
+export function formatHour(iso: string, locale = "en"): string {
+  return new Date(iso).toLocaleString(localeTag(locale), {
     weekday: "short",
     hour: "2-digit",
     minute: "2-digit",

@@ -1,4 +1,4 @@
-"""Label report: is there enough data to attempt M8 yet?
+"""Label report: is there enough data to attempt the ML model yet?
 
 Run: uv run python ml/notebooks/label_report.py
 
@@ -78,7 +78,7 @@ def report(training) -> None:
     print("\n" + "=" * 72)
     if verdict["ready"]:
         print("READY: enough labels, and both classes are represented.")
-        print("M8 can begin. The heuristic is the baseline to beat, not the target.")
+        print("M9 can begin. The heuristic is the baseline to beat, not the target.")
     else:
         print("NOT READY. Blockers:")
         for blocker in verdict["blockers"]:

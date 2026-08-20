@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
 
 import { useAuth } from "@/components/AuthProvider";
@@ -66,6 +67,7 @@ function PersonIcon() {
 }
 
 export default function AuthMenu({ onShowSessions }: { onShowSessions?: () => void }) {
+  const t = useTranslations("auth");
   const { user, loading } = useAuth();
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState<Step>("email");
@@ -116,8 +118,8 @@ export default function AuthMenu({ onShowSessions }: { onShowSessions?: () => vo
 
   if (!authConfigured) {
     return (
-      <button className="btn btn-quiet" disabled title="Sign-in is not configured in this build">
-        Sign in
+      <button className="btn btn-quiet" disabled title={t("notConfigured")}>
+        {t("signIn")}
       </button>
     );
   }
@@ -207,7 +209,7 @@ export default function AuthMenu({ onShowSessions }: { onShowSessions?: () => vo
           onClick={() => setOpen((v) => !v)}
           aria-expanded={open}
           aria-haspopup="dialog"
-          aria-label="Your account"
+          aria-label={t("account")}
         >
           {(user.email ?? "?").charAt(0).toUpperCase()}
         </button>
@@ -220,25 +222,25 @@ export default function AuthMenu({ onShowSessions }: { onShowSessions?: () => vo
           onClick={() => setOpen((v) => !v)}
           aria-expanded={open}
           aria-haspopup="dialog"
-          aria-label="Sign in"
+          aria-label={t("signIn")}
         >
           <PersonIcon />
-          <span className="hidden sm:inline">Sign in</span>
+          <span className="hidden sm:inline">{t("signIn")}</span>
         </button>
       )}
 
       {open && (
         <div
           role="dialog"
-          aria-label={user ? "Account" : "Sign in"}
+          aria-label={user ? t("account") : t("signIn")}
           /* Above the top bar's own z-1000, or the popover renders behind it. */
           className="panel-raised absolute right-0 top-full z-[1100] mt-2 w-[17.5rem] p-4"
         >
           {user ? (
             <>
-              <h2 className="section-title">Signed in</h2>
+              <h2 className="section-title">{t("signedIn")}</h2>
               <p className="meta mt-1.5 truncate text-primary">{user.email}</p>
-              <p className="faint mt-2">Your logged sessions are private to this account.</p>
+              <p className="faint mt-2">{t("privateNote")}</p>
               {onShowSessions && (
                 <button
                   className="btn btn-quiet mt-3 w-full"
@@ -247,21 +249,21 @@ export default function AuthMenu({ onShowSessions }: { onShowSessions?: () => vo
                     onShowSessions();
                   }}
                 >
-                  Your sessions
+                  {t("yourSessions")}
                 </button>
               )}
               <button className="btn btn-quiet mt-2 w-full" onClick={signOut}>
-                Sign out
+                {t("signOut")}
               </button>
             </>
           ) : step === "code" ? (
             <>
-              <h2 className="section-title">Enter your code</h2>
+              <h2 className="section-title">{t("enterCode")}</h2>
               <p className="faint mt-1.5">
-                We emailed a 6-digit code to <span className="text-secondary">{email}</span>.
+                {t.rich("codeSentTo", { email: () => <span className="text-secondary">{email}</span> })}
               </p>
               <form onSubmit={verifyCode} className="mt-3">
-                <label className="field" aria-label="6-digit code">
+                <label className="field" aria-label={t("codeLabel")}>
                   <input
                     /* one-time-code lets iOS and Android offer the code straight from the email,
                        so on a phone most people never type it. */
@@ -282,11 +284,11 @@ export default function AuthMenu({ onShowSessions }: { onShowSessions?: () => vo
                   className="btn btn-primary mt-2.5 w-full"
                   disabled={busy || code.length < 6}
                 >
-                  {busy ? "Checking" : "Sign in"}
+                  {busy ? t("checking") : t("signIn")}
                 </button>
               </form>
               <button className="btn btn-quiet mt-2 w-full" onClick={restart} disabled={busy}>
-                Use a different email
+                {t("differentEmail")}
               </button>
               {error && (
                 <p className="meta mt-2" style={{ color: SCORE_COLORS.flat }} role="alert">
@@ -296,10 +298,8 @@ export default function AuthMenu({ onShowSessions }: { onShowSessions?: () => vo
             </>
           ) : (
             <>
-              <h2 className="section-title">Sign in</h2>
-              <p className="faint mt-1.5">
-                To log the sessions you surf and rate them. They stay private to your account.
-              </p>
+              <h2 className="section-title">{t("signIn")}</h2>
+              <p className="faint mt-1.5">{t("whySignIn")}</p>
 
               <button
                 className="btn btn-google mt-3 w-full"
@@ -312,14 +312,14 @@ export default function AuthMenu({ onShowSessions }: { onShowSessions?: () => vo
 
               {EMAIL_SIGNIN && (
                 <>
-                  <p className="label mt-3 text-center">or</p>
+                  <p className="label mt-3 text-center">{t("or")}</p>
                   <form onSubmit={sendCode} className="mt-2">
-                    <label className="field" aria-label="Email address">
+                    <label className="field" aria-label={t("emailLabel")}>
                       <input
                         type="email"
                         required
                         autoComplete="email"
-                        placeholder="you@example.com"
+                        placeholder={t("emailPlaceholder")}
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                       />
@@ -329,7 +329,7 @@ export default function AuthMenu({ onShowSessions }: { onShowSessions?: () => vo
                       className="btn btn-quiet mt-2.5 w-full"
                       disabled={busy || email.trim() === ""}
                     >
-                      {busy ? "Sending" : "Email me a code"}
+                      {busy ? t("sending") : t("emailMeCode")}
                     </button>
                   </form>
                 </>

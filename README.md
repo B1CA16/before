@@ -68,6 +68,17 @@ remembered sessions is the point, not a convenience, because a year of archive c
 stored and waiting to be paired with them. "Your sessions" in the account menu lists, edits and deletes
 them, and deletes the account.
 
+### Languages
+
+Portuguese is the default, English is at `/en`. Portuguese keeps the unprefixed paths, so `/spot/<slug>`
+is Portuguese and `/en/spot/<slug>` is English, and links shared before the translation still work.
+
+Strings live in `apps/web/messages/{pt,en}.json`. A test asserts key parity and that every verdict the
+score can produce exists in both, because a missing key renders as a raw identifier to a user.
+
+Two things are deliberately not translated: spot names and region names, which are data from OSM rather
+than interface copy.
+
 ### Are there enough labels to train on?
 
 ```bash
@@ -75,7 +86,7 @@ uv run python ml/notebooks/label_report.py
 ```
 
 Reports the label count, class balance, how many examples are paired with measured rather than
-forecast conditions, and a plain verdict on whether M8 can begin. The thresholds live in
+forecast conditions, and a plain verdict on whether the ML milestone (M9) can begin. The thresholds live in
 `before_surf.labels` so they cannot be quietly relaxed to make a run look better.
 
 ## Layout

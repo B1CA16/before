@@ -2,7 +2,9 @@
 
 import { useMemo, useState } from "react";
 
-import { UI_LOCALE } from "@/lib/forecast";
+import { useLocale, useTranslations } from "next-intl";
+
+import { localeTag } from "@/lib/forecast";
 
 /**
  * A month grid for choosing a past date.
@@ -39,19 +41,21 @@ export default function DayPicker({
   max: Date;
   onSelect: (day: Date) => void;
 }) {
+  const t = useTranslations("calendar");
+  const tag = localeTag(useLocale());
   const [month, setMonth] = useState(() => startOfMonth(value));
 
   const weekdays = useMemo(() => {
     // "short" rather than "narrow": narrow gives M T W T F S S, where the repeated T and S are
     // ambiguous. Three letters still fit seven columns at phone width.
-    const fmt = new Intl.DateTimeFormat(UI_LOCALE, { weekday: "short" });
+    const fmt = new Intl.DateTimeFormat(tag, { weekday: "short" });
     // 1 January 2024 was a Monday, which is the first column here.
     return Array.from({ length: 7 }, (_, i) => fmt.format(new Date(2024, 0, 1 + i)));
-  }, []);
+  }, [tag]);
 
   const monthLabel = useMemo(
-    () => new Intl.DateTimeFormat(UI_LOCALE, { month: "long", year: "numeric" }).format(month),
-    [month]
+    () => new Intl.DateTimeFormat(tag, { month: "long", year: "numeric" }).format(month),
+    [month, tag]
   );
 
   const days = useMemo(() => {
@@ -76,7 +80,7 @@ export default function DayPicker({
   return (
     <div className="panel-raised p-3">
       <div className="flex items-center justify-between gap-2">
-        <button type="button" className="btn-avatar" onClick={() => shiftMonth(-1)} aria-label="Previous month">
+        <button type="button" className="btn-avatar" onClick={() => shiftMonth(-1)} aria-label={t("previousMonth")}>
           <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden>
             <path d="M10 3L5 8l5 5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
           </svg>
@@ -87,7 +91,7 @@ export default function DayPicker({
           className="btn-avatar"
           onClick={() => shiftMonth(1)}
           disabled={!canGoForward}
-          aria-label="Next month"
+          aria-label={t("nextMonth")}
           style={canGoForward ? undefined : { opacity: 0.35, cursor: "not-allowed" }}
         >
           <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden>

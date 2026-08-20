@@ -33,9 +33,9 @@ from before_surf.features.derive import build_features
 # class boundary: moving it silently redefines what the model is predicting.
 WORTH_IT_FROM = 4
 
-# Readiness thresholds for attempting M8, stated up front so "do we have enough data" becomes a
-# measurement rather than an argument. Both matter: 200 labels that are 97% one class teach a model
-# to answer "yes" and nothing else.
+# Readiness thresholds for attempting the ML milestone, stated up front so "do we have enough
+# data" becomes a measurement rather than an argument. Both matter: 200 labels that are 97% one
+# class teach a model to answer "yes" and nothing else.
 MIN_LABELS = 80
 MIN_MINORITY_SHARE = 0.25
 
@@ -145,7 +145,7 @@ def summarise(training: TrainingSet) -> dict:
 
 
 def readiness(training: TrainingSet) -> dict:
-    """Is there enough to attempt M8? Reported as reasons, so a "no" says what is missing."""
+    """Is there enough to attempt the model? Reported as reasons, so a "no" says what is missing."""
     stats = summarise(training)
     blockers = []
     if stats["labels"] < MIN_LABELS:

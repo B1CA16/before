@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 
 import { SCORE_COLORS } from "@/lib/score";
@@ -38,6 +39,7 @@ export function GoogleMark() {
 }
 
 export default function GoogleSignIn({ className = "" }: { className?: string }) {
+  const t = useTranslations("auth");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -72,7 +74,7 @@ export default function GoogleSignIn({ className = "" }: { className?: string })
     <>
       <button className={`btn btn-google w-full ${className}`} onClick={signIn} disabled={busy}>
         <GoogleMark />
-        {busy ? "Redirecting" : "Continue with Google"}
+        {busy ? t("redirecting") : t("continueGoogle")}
       </button>
       {error && (
         <p className="meta mt-2" style={{ color: SCORE_COLORS.flat }} role="alert">

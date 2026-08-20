@@ -1,12 +1,14 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import { getTranslations, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
 
 import ShareLink from "@/components/ShareLink";
 import Wordmark from "@/components/Wordmark";
+import { Link } from "@/i18n/navigation";
+import { routing } from "@/i18n/routing";
 import { getForecastCached, getSpotsCached, getSpotWithScore } from "@/lib/api";
 import { bestHour, formatHour, nextTideTurn, tideLabel, upcomingHours } from "@/lib/forecast";
-import { scoreColor, scoreLabel, scoreWord, windLabel } from "@/lib/score";
+import { scoreColor, scoreLabel, scoreWordKey, windWordKey } from "@/lib/score";
 
 /**
  * A spot page, rendered on the server.
@@ -30,31 +32,44 @@ export const revalidate = 3600;
 
 export async function generateStaticParams() {
   const spots = await getSpotsCached();
-  return spots.map((s) => ({ slug: s.slug }));
+  // Every spot in every language, so both locales are prerendered rather than one being dynamic.
+  return routing.locales.flatMap((locale) => spots.map((s) => ({ locale, slug: s.slug })));
 }
 
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ slug: string }>;
+  params: Promise<{ locale: string; slug: string }>;
 }): Promise<Metadata> {
-  const { slug } = await params;
+  const { locale, slug } = await params;
+  const t = await getTranslations({ locale, namespace: "meta" });
+  const words = await getTranslations({ locale, namespace: "score" });
   const data = await getSpotWithScore(slug);
-  if (!data) return { title: "Spot not found" };
+  if (!data) return { title: t("notFound") };
+
   const { spot, now } = data;
   const score = now?.score ?? null;
   // Built from real data, because a description that reads identically on 92 pages is not a
   // description.
   const description =
     score === null
-      ? `Surf conditions and forecast for ${spot.name} on the ${spot.region} coast.`
-      : `${spot.name} is ${scoreWord(score)} right now, scoring ${scoreLabel(score)} out of 10. ` +
-        `Swell, wind, tide and the hours ahead.`;
+      ? t("spotDescriptionNoScore", { name: spot.name, region: spot.region })
+      : t("spotDescription", {
+          name: spot.name,
+          word: words(scoreWordKey(score)),
+          score: scoreLabel(score),
+        });
+
+  const path = `/spot/${spot.slug}`;
   return {
-    title: `${spot.name} surf report and forecast`,
+    title: t("spotTitle", { name: spot.name }),
     description,
-    alternates: { canonical: `/spot/${spot.slug}` },
-    openGraph: { title: `${spot.name} surf report`, description, type: "article" },
+    alternates: {
+      canonical: locale === routing.defaultLocale ? path : `/${locale}${path}`,
+      // Both languages offered for the same spot, so they do not compete with each other.
+      languages: { pt: path, en: `/en${path}` },
+    },
+    openGraph: { title: t("spotTitle", { name: spot.name }), description, type: "article" },
   };
 }
 
@@ -67,10 +82,22 @@ function Stat({ label, value }: { label: string; value: string }) {
   );
 }
 
-export default async function SpotPage({ params }: { params: Promise<{ slug: string }> }) {
-  const { slug } = await params;
+export default async function SpotPage({
+  params,
+}: {
+  params: Promise<{ locale: string; slug: string }>;
+}) {
+  const { locale, slug } = await params;
+  setRequestLocale(locale);
+
   const data = await getSpotWithScore(slug);
   if (!data) notFound();
+
+  const t = await getTranslations({ locale, namespace: "spot" });
+  const nav = await getTranslations({ locale, namespace: "nav" });
+  const words = await getTranslations({ locale, namespace: "score" });
+  const winds = await getTranslations({ locale, namespace: "wind" });
+  const tide = await getTranslations({ locale, namespace: "tide" });
 
   const { spot, now } = data;
   const score = now?.score ?? null;
@@ -82,11 +109,11 @@ export default async function SpotPage({ params }: { params: Promise<{ slug: str
   return (
     <div className="min-h-full bg-app">
       <header className="flex h-16 items-center gap-3 border-b border-hairline bg-panel px-4">
-        <Link href="/" aria-label="beFORE home">
+        <Link href="/" aria-label={nav("home")}>
           <Wordmark className="h-8 w-auto flex-none" />
         </Link>
         <Link href="/" className="btn btn-quiet ml-auto">
-          Open the map
+          {nav("openMap")}
         </Link>
       </header>
 
@@ -97,7 +124,7 @@ export default async function SpotPage({ params }: { params: Promise<{ slug: str
               {/* A real h1 with the real name: the single most useful thing on this page both for a
                   crawler and for someone who followed a shared link. */}
               <h1 className="title text-primary">{spot.name}</h1>
-              <p className="faint mt-0.5">{spot.region} coast</p>
+              <p className="faint mt-0.5">{t("coast", { region: spot.region })}</p>
             </div>
             <div className="display-score flex-none" style={{ color: scoreColor(score) }}>
               {scoreLabel(score)}
@@ -106,57 +133,62 @@ export default async function SpotPage({ params }: { params: Promise<{ slug: str
 
           <p className="meta mt-3 text-secondary">
             {score === null
-              ? `We have no current reading for ${spot.name}.`
-              : `${spot.name} is ${scoreWord(score)} right now, scoring ${scoreLabel(
-                  score
-                )} out of 10.`}
+              ? t("noReadingFor", { name: spot.name })
+              : t("isRightNow", {
+                  name: spot.name,
+                  word: words(scoreWordKey(score)),
+                  score: scoreLabel(score),
+                })}
           </p>
 
           <div className="mt-4 grid grid-cols-3 gap-2">
             <Stat
-              label="Swell"
+              label={t("swell")}
               value={now?.swell_height_m == null ? "-" : `${now.swell_height_m.toFixed(1)} m`}
             />
             <Stat
-              label="Period"
+              label={t("period")}
               value={now?.swell_period_s == null ? "-" : `${now.swell_period_s.toFixed(1)} s`}
             />
-            <Stat label="Wind" value={windLabel(now?.offshore_component ?? null)} />
+            <Stat label={t("wind")} value={winds(windWordKey(now?.offshore_component ?? null))} />
           </div>
 
           {tideNow?.sea_level_m != null && (
             <p className="meta mt-4 text-secondary">
-              <span className="label">Tide</span> {tideLabel(tideNow.sea_level_m)}
-              {tideNow.tide_rising !== null && (tideNow.tide_rising ? ", rising" : ", falling")}
-              {turn && `, ${turn.kind} at ${formatHour(turn.at)}`}
+              <span className="label">{tide("title")}</span> {tideLabel(tideNow.sea_level_m)}
+              {tideNow.tide_rising !== null &&
+                `, ${tideNow.tide_rising ? tide("rising") : tide("falling")}`}
+              {turn && `, ${tide(turn.kind)} ${t("at")} ${formatHour(turn.at, locale)}`}
             </p>
           )}
 
           {peak && (
             <p className="meta mt-2 text-secondary">
-              <span className="label">Best ahead</span> {formatHour(peak.observed_at)} at{" "}
-              {scoreLabel(peak.score)}
+              <span className="label">{t("bestAhead")}</span> {formatHour(peak.observed_at, locale)}{" "}
+              {t("at")} {scoreLabel(peak.score)}
             </p>
           )}
 
           <div className="mt-5 flex flex-wrap gap-2">
             <Link href={`/?spot=${spot.slug}`} className="btn btn-primary">
-              See it on the map
+              {t("seeOnMap")}
             </Link>
-            <ShareLink title={`${spot.name} surf report`} />
+            <ShareLink title={t("shareTitle", { name: spot.name })} />
           </div>
         </div>
 
         {/* The hours ahead as text, not only a chart. A chart is a canvas element to a crawler. */}
         {hours.length > 0 && (
           <section className="panel mt-4 p-5">
-            <h2 className="section-title">Next hours at {spot.name}</h2>
+            <h2 className="section-title">{t("nextHours", { name: spot.name })}</h2>
             <ul className="mt-3 grid gap-1.5">
               {hours.slice(0, 12).map((hour) => (
                 <li key={hour.observed_at} className="flex items-baseline justify-between gap-3">
-                  <span className="meta text-secondary">{formatHour(hour.observed_at)}</span>
+                  <span className="meta text-secondary">
+                    {formatHour(hour.observed_at, locale)}
+                  </span>
                   <span className="faint">
-                    {hour.swell_height_m?.toFixed(1) ?? "-"} m at{" "}
+                    {hour.swell_height_m?.toFixed(1) ?? "-"} m {t("at")}{" "}
                     {hour.swell_period_s?.toFixed(1) ?? "-"} s
                   </span>
                   <span className="value tabular-nums" style={{ color: scoreColor(hour.score) }}>
@@ -168,10 +200,7 @@ export default async function SpotPage({ params }: { params: Promise<{ slug: str
           </section>
         )}
 
-        <p className="faint mt-4">
-          Scores come from open forecast data and a transparent formula, not from anyone&apos;s
-          opinion. Rating sessions you actually surfed is what will improve them.
-        </p>
+        <p className="faint mt-4">{t("honesty")}</p>
       </main>
     </div>
   );

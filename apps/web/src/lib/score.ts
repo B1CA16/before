@@ -29,9 +29,17 @@ export function scoreColor(score: number | null): string {
   return SCORE_COLORS.firing;
 }
 
-/** Plain-language verdict, so the UI never makes you interpret a number. */
-export function scoreWord(score: number | null): string {
-  if (score === null) return "no reading";
+/**
+ * Which verdict a score earns, as a translation key rather than a word.
+ *
+ * The thresholds are the product decision and belong here; the wording belongs in the message
+ * catalogues. Returning a key keeps the two apart, so translating "a bombar" never risks nudging the
+ * boundary at which a score becomes one.
+ */
+export type ScoreWord = "unknown" | "flat" | "marginal" | "fun" | "firing";
+
+export function scoreWordKey(score: number | null): ScoreWord {
+  if (score === null) return "unknown";
   if (score < 3) return "flat";
   if (score < 5) return "marginal";
   if (score < 7) return "fun";
@@ -43,9 +51,11 @@ export function scoreLabel(score: number | null): string {
 }
 
 // offshore_component: +1 = fully offshore (clean), -1 = fully onshore (choppy).
-export function windLabel(offshoreComponent: number | null): string {
-  if (offshoreComponent === null) return "-";
+export type WindWord = "unknown" | "offshore" | "onshore" | "cross";
+
+export function windWordKey(offshoreComponent: number | null): WindWord {
+  if (offshoreComponent === null) return "unknown";
   if (offshoreComponent > 0.3) return "offshore";
   if (offshoreComponent < -0.3) return "onshore";
-  return "cross-shore";
+  return "cross";
 }

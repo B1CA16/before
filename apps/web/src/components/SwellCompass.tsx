@@ -1,4 +1,3 @@
-import { windLabel } from "@/lib/score";
 
 /**
  * The geometry the score is built from, drawn.
@@ -14,12 +13,13 @@ export default function SwellCompass({
   orientationDeg,
   swellDeg,
   windDeg,
-  offshoreComponent,
+  labels,
 }: {
   orientationDeg: number | null;
   swellDeg: number | null;
   windDeg: number | null;
-  offshoreComponent: number | null;
+  /** Translated by the caller: this component draws geometry and should not own wording. */
+  labels: { faces: string; swellFrom: string; wind: string; windWord: string };
 }) {
   if (orientationDeg === null) return null;
 
@@ -85,19 +85,19 @@ export default function SwellCompass({
       </svg>
 
       <dl className="grid grid-cols-[auto_auto] items-baseline gap-x-3 gap-y-1.5">
-        <dt className="label">Faces</dt>
+        <dt className="label">{labels.faces}</dt>
         <dd className="text-meta tabular-nums text-primary">{Math.round(orientationDeg)}&deg;</dd>
 
         <dt className="label" style={{ color: "var(--color-accent)" }}>
-          Swell from
+          {labels.swellFrom}
         </dt>
         <dd className="text-meta tabular-nums text-primary">
           {swellDeg === null ? "-" : `${Math.round(swellDeg)}\u00b0`}
         </dd>
 
-        <dt className="label">Wind</dt>
+        <dt className="label">{labels.wind}</dt>
         <dd className="text-meta text-primary">
-          {windLabel(offshoreComponent)}
+          {labels.windWord}
           {windDeg !== null && (
             <span className="text-faint"> ({Math.round(windDeg)}&deg;)</span>
           )}

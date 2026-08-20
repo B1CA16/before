@@ -1,10 +1,12 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useMemo, useState } from "react";
 
 import AuthMenu from "@/components/AuthMenu";
+import LanguageSwitch from "@/components/LanguageSwitch";
 import Chip from "@/components/Chip";
 import LogSessionSheet from "@/components/LogSessionSheet";
 import SessionsSheet from "@/components/SessionsSheet";
@@ -13,17 +15,23 @@ import SpotDetail from "@/components/SpotDetail";
 import WaveLoader from "@/components/WaveLoader";
 import Wordmark from "@/components/Wordmark";
 import { getScores, getSpots, type ScoreNow, type SessionRow, type Spot } from "@/lib/api";
-import { scoreColor, scoreLabel, scoreWord } from "@/lib/score";
+import { scoreColor, scoreLabel, scoreWordKey } from "@/lib/score";
 
 // Leaflet touches window, so the map is browser-only.
 const SpotMap = dynamic(() => import("@/components/SpotMap"), {
   ssr: false,
-  loading: () => (
-    <div className="grid h-full w-full place-items-center bg-water">
-      <WaveLoader label="Loading the map" />
-    </div>
-  ),
+  loading: () => <MapLoading />,
 });
+
+/** Separate because dynamic()'s loading option runs outside any component, so it cannot call hooks. */
+function MapLoading() {
+  const t = useTranslations("map");
+  return (
+    <div className="grid h-full w-full place-items-center bg-water">
+      <WaveLoader label={t("loading")} />
+    </div>
+  );
+}
 
 function TopBar({
   query,
@@ -36,13 +44,14 @@ function TopBar({
   loading: boolean;
   onShowSessions: () => void;
 }) {
+  const t = useTranslations("nav");
   return (
     <header className="z-[1000] flex h-16 flex-none items-center gap-3 border-b border-hairline bg-panel px-4 shadow-[var(--shadow-1)]">
       {/* Inlined so the radar in the O can ping, faster while data is in flight. flex-none because
           otherwise the bar's other controls shrink the logo instead of themselves. */}
       <Wordmark className="h-8 w-auto flex-none" pinging={loading} />
 
-      <label className="field ml-2 w-full max-w-64" aria-label="Search spots">
+      <label className="field ml-2 w-full max-w-64" aria-label={t("search")}>
         <svg width="13" height="13" viewBox="0 0 16 16" aria-hidden className="flex-none opacity-50">
           <circle cx="6.5" cy="6.5" r="4.5" fill="none" stroke="currentColor" strokeWidth="1.6" />
           <path d="M10 10l4 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
@@ -50,21 +59,22 @@ function TopBar({
         <input
           value={query}
           onChange={(e) => onQuery(e.target.value)}
-          placeholder="Search a spot"
+          placeholder={t("search")}
           type="search"
         />
       </label>
 
       <div className="ml-auto flex items-center gap-2">
-        <span className="pill hidden md:inline-flex">Lisbon coast</span>
+        <span className="pill hidden md:inline-flex">{t("region")}</span>
         <span className="pill hidden lg:inline-flex">
           <span
             className="h-1.5 w-1.5 rounded-full"
             style={{ background: "var(--color-accent)" }}
             aria-hidden
           />
-          Updated 06:00
+          {t('updated')}
         </span>
+        <LanguageSwitch />
         <AuthMenu onShowSessions={onShowSessions} />
       </div>
     </header>
@@ -74,6 +84,8 @@ function TopBar({
 function HomeInner() {
   // Read once for the initial selection. Reading it on every render would fight the shallow URL
   // updates below, which deliberately do not re-run the router.
+  const t = useTranslations("home");
+  const words = useTranslations("score");
   const initialSpot = useSearchParams().get("spot");
   const [spots, setSpots] = useState<Spot[]>([]);
   const [scores, setScores] = useState<Record<string, ScoreNow>>({});
@@ -134,7 +146,7 @@ function HomeInner() {
     setSheetOpen(true);
     // replaceState rather than router.push: the map should not remount, and a selection is not a
     // separate history entry to press Back through. The URL still becomes copyable, which is the point.
-    window.history.replaceState(null, "", `/?spot=${slug}`);
+    window.history.replaceState(null, "", `${window.location.pathname}?spot=${slug}`);
   }
 
   return (
@@ -151,38 +163,36 @@ function HomeInner() {
         <aside className="hidden min-h-0 flex-col border-r border-hairline bg-app md:flex">
           <div className="p-3">
             <div className="panel p-4">
-              <h2 className="section-title">Right now</h2>
+              <h2 className="section-title">{t("rightNow")}</h2>
               {failed ? (
                 <p className="meta mt-2.5" style={{ color: scoreColor(1) }}>
-                  Cannot reach the forecast service.
+                  {t("unreachable")}
                 </p>
               ) : best ? (
                 <>
                   <p className="title mt-2 text-primary">
-                    {bestScore !== null && bestScore >= 5
-                      ? "It is worth going."
-                      : "Nothing is firing."}
+                    {bestScore !== null && bestScore >= 5 ? t("worthGoing") : t("nothingFiring")}
                   </p>
                   <p className="meta mt-1.5 text-secondary">
-                    {best.name} leads the coast at {scoreLabel(bestScore)}.
+                    {t("leads", { name: best.name, score: scoreLabel(bestScore) })}
                   </p>
                   <div className="mt-3">
-                    <Chip color={scoreColor(bestScore)}>{scoreWord(bestScore)}</Chip>
+                    <Chip color={scoreColor(bestScore)}>{words(scoreWordKey(bestScore))}</Chip>
                   </div>
                 </>
               ) : (
-                <WaveLoader label="Checking the coast" className="mt-3 items-start" />
+                <WaveLoader label={t("checkingCoast")} className="mt-3 items-start" />
               )}
             </div>
           </div>
 
           <div className="flex items-baseline justify-between px-4 pb-2">
-            <h2 className="section-title">{query.trim() ? "Matches" : "All spots"}</h2>
+            <h2 className="section-title">{query.trim() ? t("matches") : t("allSpots")}</h2>
             <span className="label">{spots.length ? visible.length : ""}</span>
           </div>
           <div className="min-h-0 flex-1 overflow-y-auto pb-3 pl-3 pr-2">
             {spots.length > 0 && visible.length === 0 ? (
-              <p className="faint px-1 py-6">No spot matches that name.</p>
+              <p className="faint px-1 py-6">{t("noMatch")}</p>
             ) : (
               <RankedList
                 spots={visible}
@@ -214,7 +224,7 @@ function HomeInner() {
             <div className="panel-raised flex items-center gap-2.5 px-3.5 py-2.5">
               {best && !failed ? (
                 <>
-                  <span className="label flex-none">Best</span>
+                  <span className="label flex-none">{t("best")}</span>
                   <span className="truncate text-body font-semibold text-primary">{best.name}</span>
                   <span
                     className="ml-auto flex-none text-value font-extrabold tabular-nums"
@@ -225,7 +235,7 @@ function HomeInner() {
                 </>
               ) : (
                 <span className="faint truncate">
-                  {failed ? "Forecast service unreachable" : "Loading"}
+                  {failed ? t("serviceDown") : t("loading")}
                 </span>
               )}
             </div>
@@ -265,7 +275,7 @@ function HomeInner() {
                         sheetTab === tab ? "bg-accent text-white" : "text-secondary"
                       }`}
                     >
-                      {tab === "spot" ? "This spot" : "All spots"}
+                      {tab === "spot" ? t("thisSpot") : t("allSpots")}
                     </button>
                   ))}
                 </div>
@@ -274,7 +284,7 @@ function HomeInner() {
                   aria-expanded={sheetOpen}
                   className="label ml-auto cursor-pointer px-2 py-1.5"
                 >
-                  {sheetOpen ? "Collapse" : "Expand"}
+                  {sheetOpen ? t("collapse") : t("expand")}
                 </button>
               </div>
 
@@ -294,7 +304,7 @@ function HomeInner() {
                       {selectedSpot.name}
                     </span>
                     <span className="faint block">
-                      {scoreWord(scores[selectedSpot.slug]?.score ?? null)}, tap for the week
+                      {t("tapForWeek", { word: words(scoreWordKey(scores[selectedSpot.slug]?.score ?? null)) })}
                     </span>
                   </span>
                 </button>
