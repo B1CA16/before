@@ -1,34 +1,37 @@
 {
-  "meta": {
-    "title": "beFORE, surf intelligence for the Lisbon coast",
-    "description": "See which beach is worth it right now. Hourly surf scores for the Lisbon, Ericeira and Cascais coast, computed from open forecast data.",
-    "spotTitle": "{name} surf report and forecast",
-    "spotDescription": "{name} is {word} right now, scoring {score} out of 10. Swell, wind, tide and the hours ahead.",
-    "spotDescriptionNoScore": "Surf conditions and forecast for {name} on the {region} coast.",
-    "notFound": "Spot not found"
+  "auth": {
+    "account": "Your account",
+    "checking": "Checking",
+    "codeLabel": "6-digit code",
+    "codeSentTo": "We emailed a 6-digit code to {email}.",
+    "consent": "By signing in you accept the <terms>Terms</terms> and the <privacy>Privacy Policy</privacy>.",
+    "continueGoogle": "Continue with Google",
+    "differentEmail": "Use a different email",
+    "emailLabel": "Email address",
+    "emailMeCode": "Email me a code",
+    "emailPlaceholder": "you@example.com",
+    "enterCode": "Enter your code",
+    "expired": "Your session has expired. Sign in again to continue.",
+    "notConfigured": "Sign-in is not configured in this build",
+    "or": "or",
+    "privateNote": "Your logged sessions are private to this account.",
+    "redirecting": "Redirecting",
+    "sending": "Sending",
+    "signIn": "Sign in",
+    "signOut": "Sign out",
+    "signedIn": "Signed in",
+    "whySignIn": "To log the sessions you surf and rate them. They stay private to your account.",
+    "yourSessions": "Your sessions"
   },
-  "nav": {
-    "search": "Search a spot",
-    "region": "Lisbon coast",
-    "updated": "Updated 06:00",
-    "language": "Language",
-    "openMap": "Open the map",
-    "home": "beFORE home",
-    "languageName": "English",
-    "noMatch": "No spot matches that name."
+  "calendar": {
+    "previousMonth": "Previous month",
+    "nextMonth": "Next month"
   },
-  "score": {
-    "unknown": "no reading",
-    "flat": "flat",
-    "marginal": "marginal",
-    "fun": "fun",
-    "firing": "firing"
-  },
-  "wind": {
-    "offshore": "offshore",
-    "onshore": "onshore",
-    "cross": "cross-shore",
-    "unknown": "-"
+  "footer": {
+    "credits": "Forecasts from Open-Meteo. Maps from OpenStreetMap and CARTO.",
+    "legal": "Legal",
+    "privacy": "Privacy",
+    "terms": "Terms"
   },
   "home": {
     "rightNow": "Right now",
@@ -48,85 +51,11 @@
     "collapse": "Collapse",
     "tapForWeek": "{word}, tap for the week"
   },
-  "map": {
-    "loading": "Loading the map",
-    "findingSpots": "Finding spots"
-  },
-  "spot": {
-    "angles": "Angles",
-    "at": "at",
-    "away": "away",
-    "back": "Back to the map",
-    "bestAhead": "Best ahead",
-    "coast": "{region} coast",
-    "crumbMap": "Map",
+  "legal": {
+    "crumbHome": "Home",
     "crumbNav": "Breadcrumb",
-    "faces": "Faces",
-    "factorExposure": "Exposure",
-    "factorPeriod": "Period",
-    "factorSize": "Size",
-    "factorWind": "Wind",
-    "forecastFailed": "The forecast did not load.",
-    "fullReport": "Open the full report for {name}",
-    "honesty": "Scores come from open forecast data and a transparent formula, not from anyone's opinion. Rating sessions you actually surfed is what will improve them.",
-    "hoursAhead": "Hours ahead",
-    "isRightNow": "{name} is {word} right now, scoring {score} out of 10.",
-    "linkCopied": "Link copied",
-    "logCta": "Log a session",
-    "logHere": "Log a session here",
-    "logHint": "Rating what you surfed is what teaches the score.",
-    "nearby": "Nearby spots",
-    "nextDays": "Next days",
-    "nextHours": "Next hours at {name}",
-    "noForecast": "No forecast for this spot yet.",
-    "noReadingFor": "We have no current reading for {name}.",
-    "openInApp": "Open in the interactive map",
-    "peaks": "peaks",
-    "period": "Period",
-    "readingFor": "Conditions at {hour}",
-    "readingForecast": "Reading the forecast",
-    "seeOnMap": "See it on the map",
-    "share": "Share",
-    "shareTitle": "{name} surf report",
-    "swell": "Swell",
-    "swellFrom": "Swell from",
-    "viewFull": "Full report",
-    "weakest": "<b>{factor}</b> is holding it back. The score only climbs when every factor does.",
-    "whyThisScore": "Why this score",
-    "wind": "Wind"
-  },
-  "tide": {
-    "title": "Tide",
-    "rising": "rising",
-    "falling": "falling",
-    "high": "high",
-    "low": "low",
-    "lowLabel": "Low",
-    "highLabel": "High",
-    "summary": "{height}{direction}{turn}"
-  },
-  "auth": {
-    "signIn": "Sign in",
-    "signedIn": "Signed in",
-    "signOut": "Sign out",
-    "account": "Your account",
-    "yourSessions": "Your sessions",
-    "privateNote": "Your logged sessions are private to this account.",
-    "notConfigured": "Sign-in is not configured in this build",
-    "continueGoogle": "Continue with Google",
-    "redirecting": "Redirecting",
-    "whySignIn": "To log the sessions you surf and rate them. They stay private to your account.",
-    "emailLabel": "Email address",
-    "emailPlaceholder": "you@example.com",
-    "emailMeCode": "Email me a code",
-    "sending": "Sending",
-    "enterCode": "Enter your code",
-    "codeSentTo": "We emailed a 6-digit code to {email}.",
-    "codeLabel": "6-digit code",
-    "checking": "Checking",
-    "differentEmail": "Use a different email",
-    "or": "or",
-    "expired": "Your session has expired. Sign in again to continue."
+    "onThisPage": "On this page",
+    "updated": "Updated {date}"
   },
   "log": {
     "title": "Log a session",
@@ -172,6 +101,109 @@
     "cancel": "Cancel",
     "done": "Done"
   },
+  "map": {
+    "loading": "Loading the map",
+    "findingSpots": "Finding spots"
+  },
+  "meta": {
+    "title": "BeFORE, surf intelligence for the Lisbon coast",
+    "description": "See which beach is worth it right now. Hourly surf scores for the Lisbon, Ericeira and Cascais coast, computed from open forecast data.",
+    "spotTitle": "{name} surf report and forecast",
+    "spotDescription": "{name} is {word} right now, scoring {score} out of 10. Swell, wind, tide and the hours ahead.",
+    "spotDescriptionNoScore": "Surf conditions and forecast for {name} on the {region} coast.",
+    "notFound": "Spot not found"
+  },
+  "nav": {
+    "search": "Search a spot",
+    "region": "Lisbon coast",
+    "updated": "Updated 06:00",
+    "language": "Language",
+    "openMap": "Open the map",
+    "home": "BeFORE home",
+    "languageName": "English",
+    "noMatch": "No spot matches that name."
+  },
+  "regions": {
+    "Lisbon": "Lisbon"
+  },
+  "score": {
+    "unknown": "no reading",
+    "flat": "flat",
+    "marginal": "marginal",
+    "fun": "fun",
+    "firing": "firing"
+  },
+  "select": {
+    "filter": "Filter",
+    "nothingMatches": "Nothing matches that.",
+    "placeholder": "Select"
+  },
+  "sessions": {
+    "accountDeleteFailed": "Could not delete your account.",
+    "cancel": "Cancel",
+    "close": "Close",
+    "confirmAccount": "Delete your account and all {count} sessions? This cannot be undone.",
+    "confirmDelete": "Delete this session? The rating is gone for good.",
+    "dataExplains": "We store your email address and the sessions you log. Sessions are private to your account: nobody else can read them, and they are used to teach the score what good surf actually feels like.",
+    "delete": "Delete",
+    "deleteAccount": "Delete my account",
+    "deleteEverything": "Delete everything",
+    "deleteFailed": "Could not delete that session.",
+    "deleting": "Deleting",
+    "deletionExplains": "Deleting your account removes your email and every session with it, immediately and for good.",
+    "edit": "Edit",
+    "empty": "Nothing logged yet. Rate a session you surfed and it will show up here.",
+    "keep": "Keep",
+    "loadFailed": "Could not load sessions.",
+    "loading": "Loading your sessions",
+    "outOf": "{rating}/5",
+    "privacyLink": "What we store about you",
+    "title": "Your sessions",
+    "yourData": "Your data"
+  },
+  "spot": {
+    "angles": "Angles",
+    "at": "at",
+    "away": "away",
+    "back": "Back to the map",
+    "bestAhead": "Best ahead",
+    "coast": "{region} coast",
+    "crumbMap": "Map",
+    "crumbNav": "Breadcrumb",
+    "faces": "Faces",
+    "factorExposure": "Exposure",
+    "factorPeriod": "Period",
+    "factorSize": "Size",
+    "factorWind": "Wind",
+    "forecastFailed": "The forecast did not load.",
+    "fullReport": "Open the full report for {name}",
+    "honesty": "Scores come from open forecast data and a transparent formula, not from anyone's opinion. Rating sessions you actually surfed is what will improve them.",
+    "hoursAhead": "Hours ahead",
+    "isRightNow": "{name} is {word} right now, scoring {score} out of 10.",
+    "linkCopied": "Link copied",
+    "logCta": "Log a session",
+    "logHere": "Log a session here",
+    "logHint": "Rating what you surfed is what teaches the score.",
+    "nearby": "Nearby spots",
+    "nextDays": "Next days",
+    "nextHours": "Next hours at {name}",
+    "noForecast": "No forecast for this spot yet.",
+    "noReadingFor": "We have no current reading for {name}.",
+    "openInApp": "Open in the interactive map",
+    "peaks": "peaks",
+    "period": "Period",
+    "readingFor": "Conditions at {hour}",
+    "readingForecast": "Reading the forecast",
+    "seeOnMap": "See it on the map",
+    "share": "Share",
+    "shareTitle": "{name} surf report",
+    "swell": "Swell",
+    "swellFrom": "Swell from",
+    "viewFull": "Full report",
+    "weakest": "<b>{factor}</b> is holding it back. The score only climbs when every factor does.",
+    "whyThisScore": "Why this score",
+    "wind": "Wind"
+  },
   "tags": {
     "good_shape": "Good shape",
     "crowded": "Crowded",
@@ -179,38 +211,20 @@
     "too_big": "Too big",
     "blown_out": "Blown out"
   },
-  "sessions": {
-    "title": "Your sessions",
-    "close": "Close",
-    "empty": "Nothing logged yet. Rate a session you surfed and it will show up here.",
-    "loading": "Loading your sessions",
-    "loadFailed": "Could not load sessions.",
-    "edit": "Edit",
-    "delete": "Delete",
-    "keep": "Keep",
-    "deleting": "Deleting",
-    "confirmDelete": "Delete this session? The rating is gone for good.",
-    "deleteFailed": "Could not delete that session.",
-    "outOf": "{rating}/5",
-    "yourData": "Your data",
-    "dataExplains": "We store your email address and the sessions you log. Sessions are private to your account: nobody else can read them, and they are used to teach the score what good surf actually feels like.",
-    "deletionExplains": "Deleting your account removes your email and every session with it, immediately and for good.",
-    "deleteAccount": "Delete my account",
-    "confirmAccount": "Delete your account and all {count} sessions? This cannot be undone.",
-    "deleteEverything": "Delete everything",
-    "cancel": "Cancel",
-    "accountDeleteFailed": "Could not delete your account."
+  "tide": {
+    "title": "Tide",
+    "rising": "rising",
+    "falling": "falling",
+    "high": "high",
+    "low": "low",
+    "lowLabel": "Low",
+    "highLabel": "High",
+    "summary": "{height}{direction}{turn}"
   },
-  "calendar": {
-    "previousMonth": "Previous month",
-    "nextMonth": "Next month"
-  },
-  "select": {
-    "filter": "Filter",
-    "nothingMatches": "Nothing matches that.",
-    "placeholder": "Select"
-  },
-  "regions": {
-    "Lisbon": "Lisbon"
+  "wind": {
+    "offshore": "offshore",
+    "onshore": "onshore",
+    "cross": "cross-shore",
+    "unknown": "-"
   }
 }

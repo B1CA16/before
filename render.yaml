@@ -1,4 +1,4 @@
-# Render blueprint for the beFORE API.
+# Render blueprint for the BeFORE API.
 #
 # The repo is a uv workspace, so the build installs uv and syncs the whole workspace from the
 # committed lockfile. That is what makes the deployed environment identical to a local one.

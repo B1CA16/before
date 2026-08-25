@@ -63,14 +63,14 @@ The email code flow is **kept but dormant**, behind `NEXT_PUBLIC_EMAIL_SIGNIN`, 
 ### Known limitation: the consent screen says supabase.co
 
 Google's consent screen reads "Continue to `<project-ref>.supabase.co`" rather than "Continue to
-beFORE", and shows no logo. This is not a misconfiguration, and it is worth writing down so nobody
+BeFORE", and shows no logo. This is not a misconfiguration, and it is worth writing down so nobody
 spends an afternoon trying to fix it in the Google console.
 
 Google names the host that owns the OAuth callback, and that host really is Supabase, because the
 authorised redirect URI must point at `https://<project-ref>.supabase.co/auth/v1/callback`. It is a
 long-standing Supabase issue (supabase/supabase#33387).
 
-What is available for free: setting the **App name** to beFORE in the Google consent screen improves
+What is available for free: setting the **App name** to BeFORE in the Google consent screen improves
 the lines that render the app name. The domain line does not change.
 
 What would actually fix it: a **Supabase custom domain**, which is a paid add-on *and* requires a paid

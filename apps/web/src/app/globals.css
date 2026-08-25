@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 /* ============================================================================
-   beFORE design system
+   BeFORE design system
 
    Every value below is a decision, and nothing outside this file invents one.
    Components compose these tokens and the component classes at the bottom.
@@ -254,6 +254,113 @@ body {
     font-weight: 500;
     color: var(--color-faint);
     min-width: 0;
+  }
+
+  /* --- the legal pages ---
+     Long-form reading, which the rest of this app never does. Wider line height and real spacing
+     between sections, because a privacy policy nobody can read is a privacy policy nobody reads. */
+  .legal-section {
+    margin-top: 1.75rem;
+    scroll-margin-top: 5rem; /* clears the sticky header when a jump link lands here */
+  }
+  .legal-heading {
+    display: flex;
+    align-items: baseline;
+    gap: 0.6rem;
+    font-size: var(--text-value);
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    color: var(--color-primary);
+    line-height: 1.3;
+  }
+  .legal-p {
+    margin-top: 0.7rem;
+    font-size: var(--text-body);
+    line-height: 1.65;
+    color: var(--color-secondary);
+  }
+  .legal-list {
+    margin-top: 0.7rem;
+    padding-left: 1.1rem;
+    list-style: disc;
+    font-size: var(--text-body);
+    line-height: 1.65;
+    color: var(--color-secondary);
+  }
+  .legal-list li {
+    margin-top: 0.3rem;
+  }
+  .legal-list li::marker {
+    color: var(--color-faint);
+  }
+  /* The number doubles as the anchor label in the jump list and the section heading, so a reference
+     to "section 7" means the same thing in both places. */
+  .legal-jump-num {
+    display: inline-grid;
+    place-items: center;
+    flex: none;
+    min-width: 1.25rem;
+    height: 1.25rem;
+    padding: 0 0.3rem;
+    border-radius: 999px;
+    background: var(--color-inset);
+    border: 1px solid var(--color-hairline);
+    font-size: var(--text-micro);
+    font-weight: 700;
+    color: var(--color-faint);
+    line-height: 1;
+  }
+  .legal-jump {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.2rem 0;
+    font-size: var(--text-meta);
+    color: var(--color-secondary);
+    transition: color 0.15s ease;
+  }
+  .legal-jump:hover {
+    color: var(--color-accent);
+  }
+  /* Wide content scrolls inside its own box. The page body must never scroll sideways. */
+  .legal-table-wrap {
+    margin-top: 0.9rem;
+    overflow-x: auto;
+    border: 1px solid var(--color-hairline);
+    border-radius: var(--radius-chip);
+  }
+  .legal-table {
+    width: 100%;
+    min-width: 34rem;
+    border-collapse: collapse;
+    font-size: var(--text-meta);
+    line-height: 1.5;
+  }
+  .legal-table th {
+    text-align: left;
+    font-size: var(--text-label);
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--color-secondary);
+    background: var(--color-inset);
+    padding: 0.6rem 0.75rem;
+    vertical-align: top;
+  }
+  .legal-table td {
+    padding: 0.7rem 0.75rem;
+    color: var(--color-secondary);
+    vertical-align: top;
+    border-top: 1px solid var(--color-hairline);
+  }
+  .footer-link {
+    font-size: var(--text-meta);
+    font-weight: 600;
+    color: var(--color-secondary);
+    transition: color 0.15s ease;
+  }
+  .footer-link:hover {
+    color: var(--color-accent);
   }
 
   /* A pill: the navbar and toolbar control shape. Rounded like everything else. */

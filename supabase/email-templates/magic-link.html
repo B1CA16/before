@@ -1,7 +1,7 @@
 <!--
-  beFORE sign-in code, for returning users.
+  BeFORE sign-in code, for returning users.
   Supabase dashboard: Authentication > Emails > Templates > Magic Link.
-  Suggested subject: Your beFORE sign-in code
+  Suggested subject: Your BeFORE sign-in code
 
   Email clients are not browsers. Everything here is deliberate:
    - Tables for layout, because float and flex are unreliable in Outlook.
@@ -20,7 +20,7 @@
   <!-- Inbox preview line. Kept free of the code itself, so the digits are not sitting in a phone
        notification on a lock screen. -->
   <div style="display:none;max-height:0;overflow:hidden;opacity:0;">
-    Your sign-in code for beFORE.
+    Your sign-in code for BeFORE.
   </div>
 
   <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"
@@ -34,7 +34,7 @@
           <tr>
             <td align="left" style="padding:0 4px 20px 4px;">
               <img src="https://before-steel.vercel.app/before_wordmark_email.png"
-                   width="108" height="40" alt="beFORE"
+                   width="108" height="40" alt="BeFORE"
                    style="display:block;width:108px;height:40px;border:0;outline:none;text-decoration:none;" />
             </td>
           </tr>
@@ -48,7 +48,7 @@
               </h1>
               <p style="margin:10px 0 0 0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
                         font-size:14px;line-height:1.55;color:#4a5567;">
-                Enter this code in beFORE to sign in. It is valid for one hour and can be used once.
+                Enter this code in BeFORE to sign in. It is valid for one hour and can be used once.
               </p>
 
               <!-- The code -->
@@ -76,7 +76,7 @@
             <td align="left" style="padding:18px 4px 0 4px;">
               <p style="margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
                         font-size:12px;line-height:1.5;color:#98a2b3;">
-                beFORE, surf intelligence for the Lisbon coast.<br />
+                BeFORE, surf intelligence for the Lisbon coast.<br />
                 Sent to {{ .Email }} because someone entered it on the sign-in screen.
               </p>
             </td>

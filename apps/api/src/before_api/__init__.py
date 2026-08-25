@@ -1,1 +1,1 @@
-"""beFORE API: FastAPI app serving spots and BeFORE scores."""
+"""BeFORE API: FastAPI app serving spots and BeFORE scores."""

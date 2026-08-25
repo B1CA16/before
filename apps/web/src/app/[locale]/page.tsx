@@ -8,6 +8,7 @@ import { Suspense, useEffect, useMemo, useState } from "react";
 import AuthMenu from "@/components/AuthMenu";
 import LanguageSwitch from "@/components/LanguageSwitch";
 import Chip from "@/components/Chip";
+import Footer from "@/components/Footer";
 import LogSessionSheet from "@/components/LogSessionSheet";
 import SessionsSheet from "@/components/SessionsSheet";
 import RankedList from "@/components/RankedList";
@@ -207,6 +208,10 @@ function HomeInner() {
                 onHover={setHovered}
               />
             )}
+            {/* End of the list is the only place on this page where content actually ends: the map
+                fills the viewport and the shell does not scroll, so a document footer would have
+                nowhere to sit. */}
+            <Footer bare />
           </div>
         </aside>
 

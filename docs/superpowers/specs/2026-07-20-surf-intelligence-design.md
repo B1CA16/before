@@ -1,15 +1,15 @@
-# beFORE - Surf Intelligence: Design Specification
+# BeFORE - Surf Intelligence: Design Specification
 
 **Status:** Approved (design phase)
 **Date:** 2026-07-20
 **Author:** Francisco Ferreira (with ML mentor)
-**Module:** Surf Intelligence (first module of the beFORE platform)
+**Module:** Surf Intelligence (first module of the BeFORE platform)
 
 ---
 
 ## 1. Vision & scope
 
-**beFORE** is a platform that helps users decide whether outdoor sports are *worth doing*
+**BeFORE** is a platform that helps users decide whether outdoor sports are *worth doing*
 given environmental conditions. It is **not** an AI wrapper - we collect data and train our
 own models. The long-term platform may cover surf, bodyboard, bodysurf, longboard, kitesurf,
 windsurf, hiking, trekking, MTB, skiing, snowboarding, trail running, etc.
@@ -96,7 +96,7 @@ There are **two legally distinct kinds of data**:
 
 **Decision:** we never build on copyrighted competitor ratings. Reasons: (a) legal risk in the
 EU (Portugal); (b) it's a portfolio project - questionable provenance is a career/red-flag, not
-a flex; (c) it would make beFORE a *derivative* capped at "imitate the competitor," a strictly
+a flex; (c) it would make BeFORE a *derivative* capped at "imitate the competitor," a strictly
 worse product; (d) providers detect derivation via canary/honeypot entries. Building the label
 pipeline ourselves is the strictly better engineering and product decision.
 

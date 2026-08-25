@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Stand up the beFORE monorepo skeleton and a reproducible Python toolchain (uv workspace, ruff, pytest, pre-commit, typed settings, ADRs, CI) so every later milestone builds on solid, automated foundations.
+**Goal:** Stand up the BeFORE monorepo skeleton and a reproducible Python toolchain (uv workspace, ruff, pytest, pre-commit, typed settings, ADRs, CI) so every later milestone builds on solid, automated foundations.
 
 **Architecture:** A monorepo with a uv *virtual workspace* at the root. The root `pyproject.toml` declares no package of its own; it only lists workspace members and dev tooling. The first member is `ml/`, an installable package named `before-surf` (import name `before_surf`, src layout). Later milestones add `apps/api` as a second member. Quality gates (ruff, pytest, an em-dash guard) run locally via pre-commit and remotely via GitHub Actions.
 
@@ -95,7 +95,7 @@ indent_size = 2
 
 Overwrite `README.md` with exactly:
 ```markdown
-# beFORE
+# BeFORE
 
 Decide whether outdoor sports are worth doing given environmental conditions.
 We train our own ML models (this is not an AI wrapper). Built one module at a time.
@@ -184,7 +184,7 @@ Create `ml/pyproject.toml` with exactly:
 [project]
 name = "before-surf"
 version = "0.0.0"
-description = "beFORE Surf Intelligence: data, features, and scoring."
+description = "BeFORE Surf Intelligence: data, features, and scoring."
 requires-python = ">=3.12"
 dependencies = []
 
@@ -200,7 +200,7 @@ packages = ["src/before_surf"]
 
 Create `ml/src/before_surf/__init__.py` with exactly:
 ```python
-"""beFORE Surf Intelligence package."""
+"""BeFORE Surf Intelligence package."""
 
 __version__ = "0.0.0"
 ```
@@ -550,7 +550,7 @@ Create `docs/adr/0001-architecture-foundations.md` with exactly:
 
 ## Context
 
-beFORE is a learning-focused, portfolio-quality ML project starting from an empty repo. It must
+BeFORE is a learning-focused, portfolio-quality ML project starting from an empty repo. It must
 scale from a notebook-provable hypothesis to a deployed product, and later to more sports, using
 only free-tier tooling. Full reasoning is in the design spec:
 `docs/superpowers/specs/2026-07-20-surf-intelligence-design.md`.

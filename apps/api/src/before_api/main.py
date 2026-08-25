@@ -1,4 +1,4 @@
-"""FastAPI application for beFORE."""
+"""FastAPI application for BeFORE."""
 
 from datetime import datetime
 from typing import Annotated
@@ -21,7 +21,7 @@ from before_api.schemas import (
 from before_surf.config import get_settings
 from before_surf.scoring.heuristic import HeuristicScorer
 
-app = FastAPI(title="beFORE API")
+app = FastAPI(title="BeFORE API")
 
 # A browser will not read a cross-origin response unless the API allows the origin. Driven by
 # config, so production can name the real frontend without a code change.

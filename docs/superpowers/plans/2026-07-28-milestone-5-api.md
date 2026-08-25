@@ -72,7 +72,7 @@ Edit the root `pyproject.toml`:
 [project]
 name = "before-api"
 version = "0.0.0"
-description = "beFORE API: serves spots and BeFORE scores."
+description = "BeFORE API: serves spots and BeFORE scores."
 requires-python = ">=3.12"
 dependencies = [
     "before-surf",
@@ -94,16 +94,16 @@ packages = ["src/before_api"]
 
 `apps/api/src/before_api/__init__.py`:
 ```python
-"""beFORE API: FastAPI app serving spots and BeFORE scores."""
+"""BeFORE API: FastAPI app serving spots and BeFORE scores."""
 ```
 
 `apps/api/src/before_api/main.py`:
 ```python
-"""FastAPI application for beFORE."""
+"""FastAPI application for BeFORE."""
 
 from fastapi import FastAPI
 
-app = FastAPI(title="beFORE API")
+app = FastAPI(title="BeFORE API")
 
 
 @app.get("/health")
@@ -483,7 +483,7 @@ Expected: FAIL (the endpoints do not exist yet, so `/spots` returns 404).
 
 Replace `apps/api/src/before_api/main.py` with:
 ```python
-"""FastAPI application for beFORE."""
+"""FastAPI application for BeFORE."""
 
 from fastapi import Depends, FastAPI, HTTPException
 
@@ -492,7 +492,7 @@ from before_api.repository import SupabaseRepository, get_repository
 from before_api.schemas import ForecastHour, SpotOut
 from before_surf.scoring.heuristic import HeuristicScorer
 
-app = FastAPI(title="beFORE API")
+app = FastAPI(title="BeFORE API")
 _scorer = HeuristicScorer()
 
 
@@ -559,7 +559,7 @@ Stop the server with Ctrl+C when done.
 
 `apps/api/README.md`:
 ```markdown
-# beFORE API
+# BeFORE API
 
 FastAPI backend. Imports `before_surf` and serves BeFORE scores computed on-the-fly from
 forecast conditions.
@@ -594,7 +594,7 @@ Expected: all tests and hooks pass.
 
 Message:
 ```
-docs: document the beFORE API
+docs: document the BeFORE API
 ```
 
 ---

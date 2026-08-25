@@ -193,7 +193,7 @@ import time
 
 import httpx
 
-_HEADERS = {"User-Agent": "beFORE-surf/0.1 (+https://github.com/b1ca16/before)"}
+_HEADERS = {"User-Agent": "BeFORE-surf/0.1 (+https://github.com/b1ca16/before)"}
 
 MARINE_VARS: dict[str, str] = {
     "wave_height": "wave_height_m",

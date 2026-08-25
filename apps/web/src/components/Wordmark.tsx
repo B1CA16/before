@@ -1,5 +1,5 @@
 /**
- * The beFORE wordmark, inlined so the radar in the "O" can animate.
+ * The BeFORE wordmark, inlined so the radar in the "O" can animate.
  *
  * The mark's three concentric arcs are separate paths, so lighting them outward in sequence reads
  * as a radar ping, and the group rotates so the gaps in the rings sweep round. That is the reason
@@ -20,7 +20,7 @@ export default function Wordmark({
       className={`wordmark ${pinging ? "is-pinging" : ""} ${className}`}
       viewBox="0 0 2056 765"
       role="img"
-      aria-label="beFORE"
+      aria-label="BeFORE"
     >
       <g fill="#9b9da2">
         <path d="M1131.7 562.9 c-25.9 -2.1 -48.9 -9.2 -71.4 -22.1 -4 -2.3 -7.3 -4.5 -7.3 -5 0 -0.4 1.6 -0.8 3.5 -0.8 2.4 0 3.5 0.5 3.5 1.5 0 0.8 0.8 1.5 1.9 1.5 1 0 6.5 2.2 12.2 4.9 22.7 10.6 50.8 17.1 74.5 17.1 3.9 0 5.4 0.4 5.4 1.4 0 2.7 -4.4 3 -22.3 1.5z" />

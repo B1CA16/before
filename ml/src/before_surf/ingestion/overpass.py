@@ -8,7 +8,7 @@ import time
 
 import httpx
 
-_HEADERS = {"User-Agent": "beFORE-surf/0.1 (+https://github.com/b1ca16/before)"}
+_HEADERS = {"User-Agent": "BeFORE-surf/0.1 (+https://github.com/b1ca16/before)"}
 
 _FALLBACK_ENDPOINTS = (
     "https://overpass-api.de/api/interpreter",

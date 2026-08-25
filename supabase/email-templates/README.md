@@ -11,8 +11,8 @@ dashboard field is a design nobody can review or restore.
 
 | File | Dashboard template | Suggested subject |
 | --- | --- | --- |
-| `magic-link.html` | Authentication > Emails > Templates > **Magic Link** | Your beFORE sign-in code |
-| `confirm-signup.html` | Authentication > Emails > Templates > **Confirm signup** | Your beFORE sign-in code |
+| `magic-link.html` | Authentication > Emails > Templates > **Magic Link** | Your BeFORE sign-in code |
+| `confirm-signup.html` | Authentication > Emails > Templates > **Confirm signup** | Your BeFORE sign-in code |
 
 Paste the file contents into the matching template and save. Both are needed: Supabase picks the
 signup template for an address it has never seen and the magic-link one for a returning address, so
@@ -69,7 +69,7 @@ Two consequences worth holding onto:
   a template pasted into the dashboard before the app ships that file shows a broken image. There is
   no local fallback: recipients fetch it from the internet.
 - **Never rename or delete it.** Emails outlive deployments. Removing that path breaks the logo
-  retroactively in every message already sitting in someone's inbox. Alt text reads "beFORE", which
+  retroactively in every message already sitting in someone's inbox. Alt text reads "BeFORE", which
   is what clients that block remote images will show instead.
 
 To regenerate after a logo change, rasterise the dark wordmark at 2x the display size (108x40 becomes
@@ -133,7 +133,7 @@ third-party route it replaces.
 | Templates editable | No | **Yes** |
 | Recipients | Supabase org members only | **Anyone** |
 | Volume | 2/hour | **500/day** |
-| Inbox display name | Supabase Auth | **beFORE** |
+| Inbox display name | Supabase Auth | **BeFORE** |
 | Sender address | `noreply@mail.app.supabase.io` | your Gmail address |
 | SPF and DKIM | n/a | **Aligned, signed by Google** |
 
@@ -146,7 +146,7 @@ requires 2-Step Verification on the account:
 3. Supabase > Authentication > Emails > SMTP Settings: host `smtp.gmail.com`, port `587`, username
    your full Gmail address, password the app password. **Sender email must be that same Gmail
    address**, because Gmail refuses to send as an address the authenticated account does not own.
-   Sender name `beFORE`.
+   Sender name `BeFORE`.
 4. Authentication > Rate Limits: raise the per-hour cap, which stays at the restrictive default.
 
 The honest limitation: the sender is a personal `@gmail.com` address, not a brand domain, and a

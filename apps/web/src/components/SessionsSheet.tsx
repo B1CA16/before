@@ -11,6 +11,7 @@ import {
   type SessionRow,
   type SessionTag,
 } from "@/lib/api";
+import { Link } from "@/i18n/navigation";
 import { localeTag } from "@/lib/forecast";
 import { SCORE_COLORS } from "@/lib/score";
 import { supabase } from "@/lib/supabase";
@@ -220,6 +221,11 @@ export default function SessionsSheet({
             <h3 className="section-title">{t("yourData")}</h3>
             <p className="meta mt-2 text-secondary">{t("dataExplains")}</p>
             <p className="faint mt-2">{t("deletionExplains")}</p>
+            {/* The summary above is the short version; this is the full one, reachable from the same
+                screen as the delete button so the two are never more than a click apart. */}
+            <Link href="/privacy" className="footer-link mt-2 inline-block" onClick={onClose}>
+              {t("privacyLink")}
+            </Link>
 
             {confirmAccount ? (
               <div className="mt-3 rounded-chip bg-inset p-2.5">

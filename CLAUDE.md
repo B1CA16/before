@@ -1,10 +1,10 @@
 # CLAUDE.md
 
-Project memory for the **beFORE** repository. Read this before working in the repo.
+Project memory for the **BeFORE** repository. Read this before working in the repo.
 
 ## What this project is
 
-beFORE is a platform that helps users decide whether outdoor sports are worth doing given
+BeFORE is a platform that helps users decide whether outdoor sports are worth doing given
 environmental conditions. We train our own ML models (this is not an AI wrapper, no LLM APIs).
 We build one module at a time. The first and only current module is **Surf Intelligence**.
 

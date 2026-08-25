@@ -1,4 +1,4 @@
-# beFORE API
+# BeFORE API
 
 FastAPI backend. Imports `before_surf` and serves BeFORE scores computed on-the-fly from
 forecast conditions.

@@ -4,6 +4,7 @@ import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
 
 import { useAuth } from "@/components/AuthProvider";
+import { Link } from "@/i18n/navigation";
 import { SCORE_COLORS } from "@/lib/score";
 import { authConfigured, supabase } from "@/lib/supabase";
 
@@ -175,7 +176,15 @@ export default function AuthMenu({ onShowSessions }: { onShowSessions?: () => vo
     // exchanges and then strips from the address bar. No callback route of our own is needed.
     const { error: oauthError } = await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: window.location.origin },
+      options: {
+        redirectTo: window.location.origin,
+        // Only the email address. Supabase's default asks Google for `profile` too, which returns a
+        // name and a picture URL that get written to the account and that this app never reads: the
+        // avatar is the first letter of the email and the account panel shows the email. Data we do
+        // not request cannot leak, cannot be misdescribed in the privacy policy, and does not have
+        // to be deleted later. If a display name is ever wanted, ask for it then.
+        scopes: "email",
+      },
     });
     if (oauthError) {
       setError(oauthError.message);
@@ -334,6 +343,23 @@ export default function AuthMenu({ onShowSessions }: { onShowSessions?: () => vo
                   </form>
                 </>
               )}
+
+              {/* Before the button, not after signing up. Consent that you meet once the account
+                  already exists is not consent, and Google's own consent screen links here too. */}
+              <p className="faint mt-3">
+                {t.rich("consent", {
+                  terms: (chunks) => (
+                    <Link href="/terms" className="footer-link">
+                      {chunks}
+                    </Link>
+                  ),
+                  privacy: (chunks) => (
+                    <Link href="/privacy" className="footer-link">
+                      {chunks}
+                    </Link>
+                  ),
+                })}
+              </p>
 
               {error && (
                 <p className="meta mt-2" style={{ color: SCORE_COLORS.flat }} role="alert">

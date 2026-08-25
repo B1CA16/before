@@ -610,7 +610,7 @@ Expected: `yaml ok`.
 
 `apps/web/README.md`:
 ```markdown
-# beFORE web
+# BeFORE web
 
 Next.js (App Router, TypeScript, Tailwind) frontend. Shows a map of spots colored by current
 BeFORE score and a forecast timeline per spot. Talks to the API over HTTP.

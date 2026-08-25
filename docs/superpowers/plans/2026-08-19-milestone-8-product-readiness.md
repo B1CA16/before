@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Make beFORE something a real surfer can be handed without apology, in their own language, and
+**Goal:** Make BeFORE something a real surfer can be handed without apology, in their own language, and
 findable by someone who was not handed it. This is the milestone that unblocks labels, because the
 project owner does not surf and cannot honestly generate them.
 
@@ -167,17 +167,41 @@ Inserting this milestone shifts the ML work back. Update section 11 of the spec:
 
 ### Task 4: privacy policy and terms
 
-- [ ] Not optional. With accounts open to other people, you are a data controller processing personal
-      data of EU residents, and Art. 13 requires you to tell them what you hold and why. Google's
-      consent screen wants the URL too.
-- [ ] `/privacy` and `/terms` as server-rendered pages, in both languages.
-- [ ] The privacy policy must describe **what is actually true**, which is unusually easy here because
-      the system was built for it: email address and logged sessions, nothing else; sessions private to
-      the account; Google as the identity provider; Supabase and Render and Vercel as processors;
-      deletion immediate and total via the account screen. Write it against the schema, not from a
-      template.
-- [ ] Link both from the footer, from the sign-in popover, and from the account screen.
+- [x] Settled: **hand-written, held as typed data** in `src/content/legal.ts`, not generated and not in
+      `messages/*.json`. The catalogue ships to the browser on every page; these documents are ~1,100
+      words rendered by two server routes, so they compile into the server render and reach no client
+      bundle. The typed shape also lets a test assert the two languages have not drifted.
+- [x] `/privacy` and `/terms`, prerendered in both languages. Build goes 189 to **193 pages**.
+- [x] **The audit came first, and the plan's own assumption above was wrong.** "Email address and
+      logged sessions, nothing else" was not true: Supabase's default Google scopes include `profile`,
+      so `auth.users.raw_user_meta_data` and `auth.identities.identity_data` also held `full_name`,
+      `name`, `avatar_url`, `picture` and `provider_id`. The app reads none of it (the avatar is the
+      first letter of the email). This is exactly what "write it against the schema" was for.
+- [x] Fixed rather than merely disclosed: sign-in now requests `scopes: "email"`. Verified by building
+      the real authorize URL, which carries `scopes=email` and a PKCE `code_challenge`.
+- [x] Second correction from verification: the site **does** set a cookie, `NEXT_LOCALE`, on the first
+      visit. The draft said only that the language was "remembered". Now named explicitly, with why a
+      strictly functional cookie needs no consent banner.
+- [x] Every factual claim checked against something: Supabase in `aws-0-eu-west-1` (Ireland) from the
+      connection string, Render in `frankfurt` from `render.yaml`, CARTO receiving the visitor's IP
+      from the tile host in the source, deletion cascading from the `on delete cascade` on
+      `surf_sessions.user_id`, and `storage = globalThis.localStorage` with `persistSession: true`
+      from the installed auth-js, since the client never overrides it.
+- [x] Contact published as a single constant. **Controller: Francisco Ferreira, Portugal.**
+- [x] Linked from the footer (map page and spot page), the sign-in popover as a consent line shown
+      *before* the Google button, and the account screen beside account deletion.
+- [x] 9 tests: structural parity between languages including table row and list counts, unique
+      anchors, no em-dashes, a contact address in every document, and that the Portuguese actually
+      carries diacritics (it was first written without them, which every structural test passed).
+- [ ] **Left for Francisco, blocked by a permission prompt:** clear the profile fields already stored
+      on the existing account. Script written and safe (it preserves `sub`/`provider_id`, without which
+      Google sign-in breaks): `.venv/Scripts/python.exe scratchpad/strip_meta.py`.
 - [ ] **Commit:** `feat: add privacy policy and terms`
+
+> **Dependency this creates for Task 8.** The privacy policy states there are no analytics or tracking
+> cookies. Adding Vercel Web Analytics falsifies that sentence, so Task 8 must update section 4 of the
+> policy and bump `LEGAL_UPDATED` in the same commit that adds the script. A policy that lags the code
+> is worse than one that was never written, because it reads as a promise.
 
 ### Task 5: favourites
 
@@ -222,6 +246,9 @@ Inserting this milestone shifts the ML work back. Update section 11 of the spec:
       should be somewhere a first-time visitor sees it.
 - [ ] Vercel Web Analytics, and one thing worth measuring above all: the ratio of visitors to logged
       sessions. That number decides whether the recruitment ask or the acquisition path is working.
+- [ ] **Required by Task 4:** the privacy policy currently states there are no analytics. Update
+      section 4 of `src/content/legal.ts` in both languages and bump `LEGAL_UPDATED`, in the same
+      commit that adds the script.
 - [ ] **Commit:** `feat: add first-run explanation and analytics`
 
 ### Task 9: keyboard access for the controls I hand-built

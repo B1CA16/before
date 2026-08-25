@@ -1,4 +1,4 @@
-# beFORE web
+# BeFORE web
 
 Next.js (App Router, TypeScript, Tailwind) frontend. Shows a map of surf spots colored by their
 current BeFORE score, and a forecast timeline per spot. Talks to the Python API over HTTP.

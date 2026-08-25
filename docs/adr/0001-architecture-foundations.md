@@ -5,7 +5,7 @@
 
 ## Context
 
-beFORE is a learning-focused, portfolio-quality ML project starting from an empty repo. It must
+BeFORE is a learning-focused, portfolio-quality ML project starting from an empty repo. It must
 scale from a notebook-provable hypothesis to a deployed product, and later to more sports, using
 only free-tier tooling. Full reasoning is in the design spec:
 `docs/superpowers/specs/2026-07-20-surf-intelligence-design.md`.

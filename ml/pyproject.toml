@@ -1,7 +1,7 @@
 [project]
 name = "before-surf"
 version = "0.0.0"
-description = "beFORE Surf Intelligence: data, features, and scoring."
+description = "BeFORE Surf Intelligence: data, features, and scoring."
 requires-python = ">=3.12"
 dependencies = [
     "httpx>=0.28.1",

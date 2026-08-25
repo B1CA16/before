@@ -1,4 +1,4 @@
-# beFORE
+# BeFORE
 
 Decide whether outdoor sports are worth doing given environmental conditions.
 We train our own ML models (this is not an AI wrapper). Built one module at a time.

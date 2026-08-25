@@ -1,7 +1,7 @@
 [project]
 name = "before-api"
 version = "0.0.0"
-description = "beFORE API: serves spots and BeFORE scores."
+description = "BeFORE API: serves spots and BeFORE scores."
 requires-python = ">=3.12"
 dependencies = [
     "before-surf",

@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 
 import AuthMenu from "@/components/AuthMenu";
 import Chip from "@/components/Chip";
+import Footer from "@/components/Footer";
 import { PeriodIcon, PinIcon, SwellIcon, WindIcon } from "@/components/Icons";
 import LanguageSwitch from "@/components/LanguageSwitch";
 import LogSessionButton from "@/components/LogSessionButton";
@@ -410,6 +411,8 @@ export default async function SpotPage({
 
         <p className="faint mx-auto mt-4 max-w-2xl text-center">{t("honesty")}</p>
       </main>
+
+      <Footer />
     </div>
   );
 }
