@@ -4,6 +4,7 @@ import FavouriteButton from "@/components/FavouriteButton";
 import { useFavourites } from "@/components/FavouritesProvider";
 import { MarkIcon } from "@/components/Icons";
 import type { ScoreNow, Spot } from "@/lib/api";
+import { distanceKm, formatKm } from "@/lib/geo";
 import { scoreColor, scoreLabel } from "@/lib/score";
 
 import { useTranslations } from "next-intl";
@@ -23,9 +24,12 @@ export default function RankedList({
   hovered,
   onSelect,
   onHover,
+  origin = null,
 }: {
   spots: Spot[];
   scores: Record<string, ScoreNow>;
+  /** Set only while sorting by distance, so the card can say how far away it is. */
+  origin?: { latitude: number; longitude: number } | null;
   selected: string | null;
   hovered: string | null;
   onSelect: (slug: string) => void;
@@ -33,6 +37,9 @@ export default function RankedList({
 }) {
   const t = useTranslations("map");
   const fav = useTranslations("favourites");
+  // "de distância" already exists under spot; duplicating it into another namespace would mean two
+  // strings to keep in step.
+  const spotT = useTranslations("spot");
   const { isFavourite } = useFavourites();
   if (spots.length === 0) {
     return <WaveLoader label={t("findingSpots")} className="py-8" />;
@@ -87,7 +94,13 @@ export default function RankedList({
                 <span className="block truncate text-body font-semibold text-primary">
                   {spot.name}
                 </span>
-                <span className="faint block truncate">{conditions(scores[spot.slug])}</span>
+                <span className="faint block truncate">
+                  {origin
+                    ? `${formatKm(
+                        distanceKm(origin.latitude, origin.longitude, spot.latitude, spot.longitude)
+                      )} ${spotT("away")}`
+                    : conditions(scores[spot.slug])}
+                </span>
               </span>
             </button>
             <FavouriteButton

@@ -260,14 +260,55 @@ Inserting this milestone shifts the ML work back. Update section 11 of the spec:
 
 ### Task 6: a map you can actually use
 
-- [ ] Search filters the **map** as well as the list. Today it filters only the list, which is
-      surprising the moment you use it.
-- [ ] "Near me" via the Geolocation API, sorting by distance. This is the real product question: not
-      "show me 92 beaches" but "which one I can reach is best right now". Handle refusal gracefully,
-      since it is a permission prompt and many people say no.
-- [ ] Cluster or thin markers where spots bunch near Cascais, deferred from M6.
-- [ ] Keep the map to the coast; the current bounds include a lot of inland Portugal.
+- [x] The map now draws the **filtered** list. Verified: no search gives 92 rows and 15 pins; typing
+      "Coxos" gives 1 row and 1 pin. Before this the rail narrowed to one row while the map carried on
+      showing every spot, so the two halves of one screen disagreed about the question being asked.
+- [x] **Thinning measured before being designed.** The spots occupy a 48 km strip, and at the default
+      zoom a 30 px pin covers 3.6 km of it: 254 pairs sit closer than 2 km and 21 closer than 300 m.
+      So this is a legibility problem, not a performance one, and the fix has to be in *screen* space
+      rather than in kilometres, because the same two spots collide at zoom 10 and separate at 13.
+      `lib/thin.ts` grids by pixel cell and keeps the **highest scoring** spot per cell, which is what
+      lets a thinned map still answer "where is it good near here". Survivors carry a `+N` badge, so
+      thinning never silently hides places. Verified: 15 pins and 14 badges at default zoom
+      (`+12`, `+7`, `+4`, ...), all 92 pins and zero badges once zoomed in.
+- [x] The selected spot and anything marked are pinned open regardless of score, so the map cannot hide
+      what the rest of the interface is pointing at.
+- [x] "Near me" via the Geolocation API, **not requested on mount**. An uninvited permission prompt is
+      both disliked and self-defeating: denial is sticky per origin, so asking badly once costs the
+      feature permanently. Verified both paths in a real browser: granted (from Carcavelos, the list
+      reorders to Carcavelos 0.1 km, Moinho 0.8 km, Torre 1.2 km, and each card shows its distance in
+      place of the conditions line) and refused (a plain message, and the order falls back to score
+      rather than scrambling).
+- [x] Bounds biased west with `maxZoom: 12`, so fitting a north-south strip of coast no longer fills
+      the eastern half of the screen with inland Portugal.
+- [x] 24 new tests: 12 for the thinning grid and 12 for ranking, including that thinning never loses or
+      duplicates a spot at any zoom, that latitude is in the metres-per-pixel maths, and that a refused
+      geolocation falls back to score.
+- [x] **Fixed while verifying: `vitest` had no config at all**, so the `@/` alias the whole app imports
+      with was unresolved in tests. It had been masked because `import type` is erased before
+      resolution, and only surfaced when a test pulled in a module importing a real value through the
+      alias. The tempting fix (rewrite the import as `./geo`) would have fixed the test and left the
+      alias broken for the next person.
 - [ ] **Commit:** `feat: filter the map by search and sort by distance`
+
+> **Two bugs found by looking rather than by testing.**
+>
+> 1. **A CSS specificity bug that only appeared while hovering.** `.seg:hover:not(:disabled)` scores
+>    0,3,0 against `.seg.is-on` at 0,2,0, so hovering the *selected* sort pill re-applied the dark text
+>    colour over its dark background and the label vanished under the pointer that had just clicked it.
+>    Source order was irrelevant; only specificity mattered. Fixed with `:not(.is-on)` plus an explicit
+>    hover state for the active pill.
+> 2. **A missing translation key rendered as raw text.** The distance line used `fav("away")`, but
+>    `away` lives in the `spot` namespace, so the UI printed `favourites.away`. Caught by watching the
+>    browser console during the run, not by any assertion.
+>
+> Both were invisible to the type checker, the linter and the test suite.
+
+> **My own checks lied twice in this task, in the same direction: reporting broken code that was fine.**
+> The zoom check pressed "Equal" expecting a Leaflet keyboard binding, silently panned instead, and
+> reported 0 pins. The `+N` badge check counted badges *after* zooming in, where nothing is hidden, so
+> zero was the correct answer to the wrong question. Neither was a code defect. Worth remembering that a
+> failing assertion is a hypothesis about the harness as much as about the app.
 
 ### Task 7: SEO
 
@@ -326,12 +367,23 @@ Inserting this milestone shifts the ML work back. Update section 11 of the spec:
 
 ## Found during M8, needs its own work
 
-- **The CARTO basemap now requires an API key.** Tiles return HTTP 200 with a 1,790 byte watermark
-  ("API KEY REQUIRED") instead of map data, cached for 180 days, with no rate-limit header, so this is
-  a policy change on their side rather than throttling. The live map is affected. Options: register a
-  free CARTO key, or move to OpenFreeMap or Stadia. **If the provider changes, the privacy policy names
-  CARTO by name in the recipients table and in the "leaving the EU" section, and both have to change in
-  the same commit.**
+- **CARTO rate-limits bursts, and my own test runs tripped it.** Corrected diagnosis: an earlier note
+  here claimed CARTO had started requiring an API key and that production was broken. That was wrong,
+  and the way it went wrong is worth keeping. The screenshot really did show "API KEY REQUIRED"
+  watermarks, and a keyless tile really did come back at 1,790 bytes. But the tile I measured,
+  `11/984/739`, is open ocean off northern Spain, where a nearly-blank tile is the correct answer. A
+  tile that actually contains Lisbon (`11/971/784`) returns 27,242 bytes of real map data. The
+  watermarks came from replaying the map dozens of times in a few minutes during verification; after a
+  pause, tiles serve normally again.
+
+  Two lessons. Measuring the wrong coordinate looks exactly like measuring a broken service, so check
+  that a fixture is where you think it is before drawing conclusions from its size. And an automated
+  UI loop is a traffic source: hammering a free tile provider in a test harness can produce a
+  "production is down" symptom that only exists in the harness.
+
+  No action needed on the provider. Worth remembering that if it ever does change, the privacy policy
+  names CARTO in the recipients table and the "leaving the EU" section, and both would have to change
+  in the same commit.
 
 - **Shakas as kudos, not as bookmarks** (Francisco's idea, and a better use of the gesture than the one
   it was rejected for). A shaka is something you give *another surfer*, so it belongs on someone else's

@@ -18,7 +18,9 @@ import SpotDetail from "@/components/SpotDetail";
 import WaveLoader from "@/components/WaveLoader";
 import Wordmark from "@/components/Wordmark";
 import { getScores, getSpots, type ScoreNow, type SessionRow, type Spot } from "@/lib/api";
-import { rankSpots } from "@/lib/rank";
+import { useGeolocation } from "@/lib/useGeolocation";
+import { rankSpots, type SortMode } from "@/lib/rank";
+import { thinSpots } from "@/lib/thin";
 import { scoreColor, scoreLabel, scoreWordKey } from "@/lib/score";
 
 // Leaflet touches window, so the map is browser-only.
@@ -108,6 +110,10 @@ function HomeInner() {
   const [logging, setLogging] = useState(false);
   const [sessionsOpen, setSessionsOpen] = useState(false);
   const [editing, setEditing] = useState<SessionRow | null>(null);
+  const [sort, setSort] = useState<SortMode>("score");
+  // Starts at the map's own initial zoom, then tracks it. Thinning depends on this.
+  const [zoom, setZoom] = useState(10);
+  const geo = useGeolocation();
 
   useEffect(() => {
     let active = true;
@@ -126,8 +132,8 @@ function HomeInner() {
   // Favourites first, then best first, unscored last. The rule lives in lib/rank so it can be tested
   // without mounting a map.
   const ranked = useMemo(
-    () => rankSpots(spots, scores, isFavourite),
-    [spots, scores, isFavourite]
+    () => rankSpots(spots, scores, isFavourite, sort, geo.position),
+    [spots, scores, isFavourite, sort, geo.position]
   );
 
   const visible = useMemo(() => {
@@ -150,6 +156,24 @@ function HomeInner() {
   const selectedSpot = selected ? spots.find((s) => s.slug === selected) : undefined;
   const best = ranked[0];
   const bestScore = best ? (scores[best.slug]?.score ?? null) : null;
+
+  // The map draws `visible`, not `spots`. Searching used to filter only the list, which meant typing
+  // a name narrowed the rail to one row while the map carried on showing all 92 pins: the two halves
+  // of the same screen disagreed about what you had asked for.
+  //
+  // Thinning is then applied on top, because 92 spots live in a 48 km strip and at the default zoom a
+  // pin covers 3.6 km of it. The selected spot and anything marked are pinned open so the map never
+  // hides what the rest of the interface is pointing at.
+  const thinned = useMemo(
+    () =>
+      thinSpots({
+        spots: visible,
+        scores,
+        zoom,
+        keep: new Set([...favourites, ...(selected ? [selected] : [])]),
+      }),
+    [visible, scores, zoom, favourites, selected]
+  );
 
   function pick(slug: string) {
     setPicked(slug);
@@ -197,20 +221,45 @@ function HomeInner() {
             </div>
           </div>
 
-          {/* When anything is marked, the list supplies its own two headings ("Os teus spots" and
-              "Todos os spots"), so this outer one would be the same words twice, three rows apart.
-              The count is still worth keeping, so it moves to a lone right-aligned row. */}
-          <div className="flex items-baseline justify-between px-4 pb-2">
-            <h2 className="section-title">
-              {query.trim() ? t("matches") : favourites.size > 0 ? "" : t("allSpots")}
-            </h2>
-            <span className="label">{spots.length ? visible.length : ""}</span>
+          {/* Sort control. Two questions, not two orderings: "where is it good" and "what can I
+              actually reach". The second only makes sense once the browser has told us where we are,
+              so the button asks for that on tap rather than on load. */}
+          <div className="flex items-center gap-1.5 px-4 pb-2">
+            <button
+              className={`seg ${sort === "score" ? "is-on" : ""}`}
+              onClick={() => setSort("score")}
+              aria-pressed={sort === "score"}
+            >
+              {t("sortBest")}
+            </button>
+            <button
+              className={`seg ${sort === "distance" ? "is-on" : ""}`}
+              aria-pressed={sort === "distance"}
+              disabled={geo.status === "asking"}
+              onClick={() => {
+                setSort("distance");
+                if (!geo.position) geo.request();
+              }}
+            >
+              {geo.status === "asking" ? t("locating") : t("sortNear")}
+            </button>
+            <span className="label ml-auto">{spots.length ? visible.length : ""}</span>
           </div>
+
+          {/* Refusal is the common case, so it gets a real message rather than silence. The list is
+              still sorted by score underneath, which is why this is a note and not an error. */}
+          {sort === "distance" && geo.status === "denied" && (
+            <p className="faint px-4 pb-2">{t("locationDenied")}</p>
+          )}
+          {sort === "distance" && geo.status === "unavailable" && (
+            <p className="faint px-4 pb-2">{t("locationUnavailable")}</p>
+          )}
           <div className="min-h-0 flex-1 overflow-y-auto pb-3 pl-3 pr-2">
             {spots.length > 0 && visible.length === 0 ? (
               <p className="faint px-1 py-6">{t("noMatch")}</p>
             ) : (
               <RankedList
+                origin={sort === "distance" ? geo.position : null}
                 spots={visible}
                 scores={scores}
                 selected={selected}
@@ -229,6 +278,8 @@ function HomeInner() {
         <section className="relative min-h-0">
           <SpotMap
             spots={spots}
+            thinned={thinned}
+            onZoom={setZoom}
             scores={scores}
             featured={featured}
             favourites={favourites}

@@ -7,6 +7,7 @@ import { useEffect, useRef } from "react";
 import { MapContainer, Marker, TileLayer, useMap } from "react-leaflet";
 
 import type { ScoreNow, Spot } from "@/lib/api";
+import type { ThinnedSpot } from "@/lib/thin";
 import { scoreColor, scoreLabel } from "@/lib/score";
 
 /**
@@ -29,7 +30,7 @@ function FlyToSelected({ spots, selected }: { spots: Spot[]; selected: string | 
   return null;
 }
 
-function MapChrome({ spots }: { spots: Spot[] }) {
+function MapChrome({ spots, onZoom }: { spots: Spot[]; onZoom: (z: number) => void }) {
   const map = useMap();
 
   // Leaflet puts the attribution bottom right by default, where the detail card sits.
@@ -37,13 +38,29 @@ function MapChrome({ spots }: { spots: Spot[] }) {
     map.attributionControl?.setPosition("bottomleft");
   }, [map]);
 
+  // Marker thinning depends on zoom, so the zoom has to become React state. `zoomend` rather than
+  // `zoom`, which fires continuously through the animation and would re-thin dozens of times per
+  // gesture.
+  useEffect(() => {
+    const report = () => onZoom(map.getZoom());
+    report();
+    map.on("zoomend", report);
+    return () => {
+      map.off("zoomend", report);
+    };
+  }, [map, onZoom]);
+
   useEffect(() => {
     if (spots.length === 0) return;
     const bounds = L.latLngBounds(spots.map((s) => [s.latitude, s.longitude] as [number, number]));
     const wide = map.getSize().x > 900;
+    // Padded east far more than west. The spots sit on a north-south strip of coast, so fitting them
+    // with even padding leaves the eastern half of the screen filled with inland Portugal that has no
+    // surf in it. Biasing the frame westward puts the Atlantic where the map is actually about.
     map.fitBounds(bounds, {
       paddingTopLeft: [40, 48],
       paddingBottomRight: wide ? [420, 48] : [40, 220],
+      maxZoom: 12,
     });
   }, [map, spots]);
   return null;
@@ -60,7 +77,8 @@ function pinIcon(
   featured: boolean,
   selected: boolean,
   hovered: boolean,
-  favourite: boolean
+  favourite: boolean,
+  hidden = 0
 ): L.DivIcon {
   const color = scoreColor(score);
 
@@ -68,7 +86,7 @@ function pinIcon(
   // conditions; favouriting is about you, and a spot you deliberately marked should stay findable on
   // a flat week when it would otherwise drop out of the leading handful. This is the one place where
   // a personal signal overrides the global ranking.
-  if (!featured && !selected && !favourite) {
+  if (!featured && !selected && !favourite && hidden === 0) {
     const d = hovered ? 16 : 12;
     return L.divIcon({
       className: hovered ? "pin-hovered" : "",
@@ -97,9 +115,13 @@ function pinIcon(
   // in it: a wave at that size is a smudge, and the heart that used to be here was a leftover from
   // before the icon changed, so the map was saying one thing and the rest of the app another.
   const badge = favourite ? '<span class="pin-mark" aria-hidden></span>' : "";
+  // "+3" when this pin stands in for spots that were thinned out at this zoom. Without it the map
+  // would quietly drop places, which is worse than a busy map: you cannot tell the difference between
+  // "nothing there" and "too crowded to draw".
+  const more = hidden > 0 ? `<span class="pin-more" aria-hidden>+${hidden}</span>` : "";
   return L.divIcon({
     className: hovered ? "pin-hovered" : "",
-    html: `<div style="position:relative;width:${size}px;height:${size}px;">${ping}${badge}
+    html: `<div style="position:relative;width:${size}px;height:${size}px;">${ping}${badge}${more}
         <div class="pin-shape" style="width:${size}px;height:${size}px;background:${color};
         transform:rotate(45deg);border-radius:9999px 9999px 9999px 3px;display:flex;
         align-items:center;justify-content:center;${ring}">
@@ -121,6 +143,8 @@ export default function SpotMap({
   hovered,
   onSelect,
   onHover,
+  onZoom,
+  thinned,
 }: {
   spots: Spot[];
   scores: Record<string, ScoreNow>;
@@ -130,6 +154,9 @@ export default function SpotMap({
   hovered: string | null;
   onSelect: (slug: string) => void;
   onHover: (slug: string | null) => void;
+  onZoom: (zoom: number) => void;
+  /** Which pins to actually draw at this zoom, and how many each stands in for. */
+  thinned: ThinnedSpot[];
 }) {
   return (
     <MapContainer center={[38.85, -9.4]} zoom={10} zoomControl={false} className="h-full w-full">
@@ -139,9 +166,9 @@ export default function SpotMap({
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, &copy; <a href="https://carto.com/attributions">CARTO</a>'
         url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png"
       />
-      <MapChrome spots={spots} />
+      <MapChrome spots={spots} onZoom={onZoom} />
       <FlyToSelected spots={spots} selected={selected} />
-      {spots.map((spot) => (
+      {thinned.map(({ spot, hidden }) => (
         <Marker
           key={spot.slug}
           position={[spot.latitude, spot.longitude]}
@@ -150,7 +177,8 @@ export default function SpotMap({
             featured.has(spot.slug),
             spot.slug === selected,
             spot.slug === hovered,
-            favourites.has(spot.slug)
+            favourites.has(spot.slug),
+            hidden
           )}
           zIndexOffset={spot.slug === selected ? 1000 : 0}
           eventHandlers={{

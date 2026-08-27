@@ -296,6 +296,68 @@ body {
     opacity: 0.32;
   }
 
+  /* A segmented control: two ways to order the same list. Small, quiet, and the selected one is
+     filled rather than merely tinted, so which is active survives a glance. */
+  .seg {
+    flex: none;
+    padding: 0.3rem 0.6rem;
+    border-radius: 999px;
+    border: 1px solid var(--color-hairline);
+    background: var(--color-panel);
+    font-size: var(--text-label);
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    color: var(--color-secondary);
+    cursor: pointer;
+    transition:
+      background-color 0.15s ease,
+      border-color 0.15s ease,
+      color 0.15s ease;
+  }
+  /* `:not(.is-on)` is load-bearing, not tidiness. `.seg:hover:not(:disabled)` scores 0,3,0 against
+     `.seg.is-on` at 0,2,0, so without the exclusion the hover rule wins on the selected pill and sets
+     its text back to the dark colour: dark text on a dark background, and the label disappears the
+     moment the pointer touches the control you just clicked. Specificity, not source order. */
+  .seg:hover:not(:disabled):not(.is-on) {
+    border-color: var(--color-edge);
+    color: var(--color-primary);
+  }
+  .seg.is-on {
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+    color: var(--color-panel);
+  }
+  .seg.is-on:hover:not(:disabled) {
+    background: var(--color-secondary);
+    border-color: var(--color-secondary);
+  }
+  .seg:disabled {
+    opacity: 0.6;
+    cursor: default;
+  }
+
+  /* "+3" on a pin that stands in for spots thinned out at this zoom. Bottom left, opposite the mark
+     badge, so a marked and thinned pin can show both without them colliding. */
+  .pin-more {
+    position: absolute;
+    bottom: -2px;
+    left: -4px;
+    z-index: 2;
+    display: grid;
+    place-items: center;
+    min-width: 16px;
+    height: 15px;
+    padding: 0 3px;
+    border-radius: 999px;
+    background: var(--color-primary);
+    border: 1.5px solid var(--color-marker-edge);
+    color: #fff;
+    font-size: 9px;
+    font-weight: 800;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+
   /* The mark toggle. */
   .mark {
     display: inline-grid;

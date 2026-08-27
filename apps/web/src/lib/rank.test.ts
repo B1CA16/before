@@ -85,3 +85,58 @@ describe("rankSpots", () => {
     expect(without.map((s) => s.slug)).toEqual(["b", "c", "a"]);
   });
 });
+
+describe("rankSpots, sorting by distance", () => {
+  // Roughly north to south along the coast.
+  const far = spot("far");
+  const mid = spot("mid");
+  const near = spot("near");
+  far.latitude = 39.0;
+  mid.latitude = 38.85;
+  near.latitude = 38.72;
+  const all = [far, mid, near];
+  const table = scores({ far: 9, mid: 5, near: 1 });
+  const me = { latitude: 38.72, longitude: -9.4 };
+
+  it("puts the nearest first, even when it scores worst", () => {
+    const out = rankSpots(all, table, none, "distance", me);
+    expect(out.map((s) => s.slug)).toEqual(["near", "mid", "far"]);
+  });
+
+  it("still sorts by score when the mode is score", () => {
+    const out = rankSpots(all, table, none, "score", me);
+    expect(out.map((s) => s.slug)).toEqual(["far", "mid", "near"]);
+  });
+
+  // A refused permission must not scramble the list.
+  it("falls back to score when there is no origin", () => {
+    expect(rankSpots(all, table, none, "distance", null).map((s) => s.slug)).toEqual([
+      "far",
+      "mid",
+      "near",
+    ]);
+    expect(rankSpots(all, table, none, "distance").map((s) => s.slug)).toEqual([
+      "far",
+      "mid",
+      "near",
+    ]);
+  });
+
+  it("keeps marked spots above everything, then sorts them by distance too", () => {
+    const marked = new Set(["far", "mid"]);
+    const out = rankSpots(all, table, (slug) => marked.has(slug), "distance", me);
+    // far and mid are marked so they lead, and between them mid is closer.
+    expect(out.map((s) => s.slug)).toEqual(["mid", "far", "near"]);
+  });
+
+  it("breaks a distance tie on score rather than leaving it to sort stability", () => {
+    const a = spot("a");
+    const b = spot("b");
+    a.latitude = 38.8;
+    b.latitude = 38.8;
+    a.longitude = -9.4;
+    b.longitude = -9.4;
+    const out = rankSpots([a, b], scores({ a: 2, b: 7 }), none, "distance", me);
+    expect(out.map((s) => s.slug)).toEqual(["b", "a"]);
+  });
+});
