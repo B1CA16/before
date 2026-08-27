@@ -28,6 +28,7 @@ import {
 } from "@/lib/api";
 import { bestHour, formatHour, upcomingHours } from "@/lib/forecast";
 import { distanceKm, formatKm } from "@/lib/geo";
+import { breadcrumbJsonLd, spotJsonLd } from "@/lib/jsonld";
 import { scoreColor, scoreLabel, scoreWordKey, windWordKey } from "@/lib/score";
 
 /**
@@ -85,14 +86,31 @@ export async function generateMetadata({
         });
 
   const path = `/spot/${spot.slug}`;
+  const canonical = locale === routing.defaultLocale ? path : `/${locale}${path}`;
   return {
     title: t("spotTitle", { name: spot.name }),
     description,
     alternates: {
-      canonical: locale === routing.defaultLocale ? path : `/${locale}${path}`,
+      canonical,
       languages: { pt: path, en: `/en${path}` },
     },
-    openGraph: { title: t("spotTitle", { name: spot.name }), description, type: "article" },
+    openGraph: {
+      // `article` was wrong: an article has an author and a publication date, and this is a live
+      // reading that changes hourly. `website` is the honest type for it.
+      type: "website",
+      siteName: "BeFORE",
+      title: t("spotTitle", { name: spot.name }),
+      description,
+      url: canonical,
+      locale: locale === "pt" ? "pt_PT" : "en_GB",
+      // Resolved against metadataBase, and generated per spot by opengraph-image.tsx next to this
+      // file, so a shared link shows the spot and its score rather than a bare favicon.
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: t("spotTitle", { name: spot.name }),
+      description,
+    },
   };
 }
 
@@ -187,6 +205,31 @@ export default async function SpotPage({
       </header>
 
       <main className="mx-auto max-w-5xl px-4 py-5">
+        {/* Structured data. Two separate scripts rather than a @graph, because they describe two
+            different things and a crawler that rejects one should still get the other. Rendered by
+            the server, so it is in the HTML a crawler sees without running any JavaScript. */}
+        <script
+          type="application/ld+json"
+          // The content is built from our own data by lib/jsonld, never from user input, and it is a
+          // script tag rather than markup, so there is nothing here for an injection to grab.
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(spotJsonLd(spot, locale)) }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(
+              breadcrumbJsonLd(
+                [
+                  { name: t("crumbMap"), path: "/" },
+                  { name: t("coast", { region }), path: `/?q=${encodeURIComponent(spot.region)}` },
+                  { name: spot.name, path: `/spot/${spot.slug}` },
+                ],
+                locale
+              )
+            ),
+          }}
+        />
+
         {/* The way out lives here rather than in the top bar. A bare arrow in the corner competed with
             the wordmark and said "back" only by convention; a breadcrumb says where you are and where
             each step goes, in words, aligned to the same grid as the content. It also links to the map

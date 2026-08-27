@@ -312,14 +312,59 @@ Inserting this milestone shifts the ML work back. Update section 11 of the spec:
 
 ### Task 7: SEO
 
-- [ ] Only meaningful now that Task 2 renders content on the server. Metadata first: per-spot titles and
-      descriptions built from real data ("Praia dos Coxos surf report and forecast"), not boilerplate.
-- [ ] `sitemap.ts` and `robots.ts` covering every spot in both locales.
-- [ ] JSON-LD: `Place` for spots, `BreadcrumbList` for navigation. Validate it rather than assuming.
-- [ ] Open Graph images per spot, generated with `next/og` so a shared link looks deliberate.
-- [ ] Honest expectation setting: this earns traffic over months, not days. It is here so the slow path
-      exists, not because it will produce labels this week.
+- [x] Measured the emitted `<head>` first, which found the defect that mattered: **`canonical` and every
+      `hreflang` were relative** (`/spot/praia-dos-coxos`). A relative canonical is merely discouraged,
+      but **relative hreflang is ignored outright** by Google, so the entire pt/en pairing built in
+      Task 3 was doing nothing. Root cause was a missing `metadataBase`, now resolved in `lib/site.ts`.
+- [x] `lib/site.ts` prefers `NEXT_PUBLIC_SITE_URL`, then `VERCEL_PROJECT_PRODUCTION_URL`, then
+      `VERCEL_URL`, then localhost. The order matters: `VERCEL_URL` is per-deployment, so using it as
+      canonical would make every preview build advertise itself and compete with production.
+- [x] Open Graph and Twitter completed: `og:url`, `og:site_name`, `og:locale`, `summary_large_image`.
+      Also corrected `og:type` on spot pages from `article` to `website`: an article has an author and a
+      publication date, and this is a live reading that changes hourly.
+- [x] `robots.ts`, including a blanket disallow on preview deployments, since a Vercel preview is a full
+      copy of the site on another hostname and indexing it is how you compete with yourself. Query
+      strings are deliberately **not** blocked: `?spot=` and `?q=` are the app's own share links.
+- [x] `sitemap.ts`: **95 entries with 190 `xhtml:link` alternates**, every URL absolute. Each pt URL
+      carries its en pair rather than listing both separately, which is the same claim the hreflang tags
+      make and what Google asks for. A dead API degrades to the static pages rather than to an empty
+      sitemap, which would read as "the spot pages were removed".
+- [x] JSON-LD via `lib/jsonld.ts`: `Place` with real coordinates, `BreadcrumbList` matching the visible
+      breadcrumb, `WebSite` in the layout. **No `aggregateRating`**, which was the live temptation here:
+      dressing a heuristic up as user reviews would be dishonest and against Google's policies, and
+      there is a test asserting the string never appears.
+- [x] `WebSite` sits in the layout rather than the home page for a concrete reason: the home page is a
+      client component, so anything it renders arrives after hydration and a crawler reading the initial
+      HTML would never see it.
+- [x] Per-spot Open Graph images with `next/og`, plus a home card that shows the **best spot right now**
+      rather than a logo, because that is the product's promise in one line. Verified as real 1200x630
+      PNGs in both locales.
+- [x] 11 JSON-LD tests. `lib/jsonld.ts` returns **typed** shapes rather than `Record<string, unknown>`:
+      the loose version compiled fine but pushed the cost onto callers, whose `any` casts were exactly
+      where a mistyped schema.org key would have slipped through.
+- [x] Verified across all six route shapes (both locales x home, spot, legal): absolute canonical,
+      absolute hreflang, an OG image, and valid parseable JSON-LD on every one.
 - [ ] **Commit:** `feat: add per-spot metadata, sitemap and structured data`
+
+> **The bug worth recording, because of how it hid.** The per-spot OG image failed with Satori's
+> "Expected <div> to have explicit display: flex if it has more than one child node". The culprit was
+> `<div>{swell.toFixed(1)} m</div>`, which looks like one string but is two child nodes: the
+> interpolated number and the literal " m". Fixed with template literals.
+>
+> The instructive part is that **`next build` passed clean**. An `opengraph-image` route under a dynamic
+> segment is rendered on demand rather than prerendered, so the build never executed it and reported
+> 195/195 pages generated while the image was broken for all 184 of them. A green build says nothing
+> about a `f` route; only requesting it does. I had also written a comment in that same file warning
+> about Satori's CSS subset, and then violated it three lines later.
+
+> Second, smaller: the card first shipped with "PONTUACAO AGORA" and "ONDULACAO" unaccented, out of a
+> vague worry about font coverage that I never checked. Satori's bundled Noto Sans covers Latin-1 fine.
+> Rendering it once would have settled it, which is the same mistake as the unaccented Portuguese in the
+> legal pages in Task 4.
+
+> **Honest expectation setting, kept from the original plan:** this earns traffic over months, not days.
+> It is here so the slow path exists, not because it will produce labels this week. The thing that
+> produces labels is still sending the link to four or five people who surf.
 
 ### Task 8: first-run explanation and analytics
 
