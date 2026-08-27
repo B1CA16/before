@@ -189,11 +189,44 @@ export default async function SpotPage({
   // Both cached, and both already fetched for other pages in this build, so this is not extra work
   // at request time. The list powers the search field and the nearby section; the scores let both show
   // a number rather than a bare name.
-  const [allSpots, allScores, forecast] = await Promise.all([
+  // Retries above make a transient failure unlikely, but "unlikely" is not "never" and a single
+  // throw here fails the whole Vercel build, not just this page. Prerendering means 184 requests at
+  // one free Render instance in a few seconds, which is exactly the load that produced the 502 that
+  // killed a deploy.
+  //
+  // So each of these degrades on its own terms rather than taking the page down:
+  //   - the forecast drives the next-hours list and the timeline. Without it the page still has the
+  //     name, the region, the current score, the breakdown, the tide and the nearby spots, which is
+  //     most of the value and all of the indexable text.
+  //   - the spot list and scores only feed the search field and the nearby section, both of which
+  //     already handle being empty.
+  //
+  // `Promise.allSettled` rather than `all`, because `all` rejects on the first failure and discards
+  // the results that did arrive.
+  const [spotsResult, scoresResult, forecastResult] = await Promise.allSettled([
     getSpotsCached(),
     getScoresCached(),
     getForecastCached(slug),
   ]);
+
+  for (const [what, result] of [
+    ["spots", spotsResult],
+    ["scores", scoresResult],
+    ["forecast", forecastResult],
+  ] as const) {
+    if (result.status === "rejected") {
+      // Logged, not swallowed: a page that silently renders without its forecast should be visible
+      // in the build output rather than looking identical to a healthy one.
+      console.warn(
+        `[spot ${slug}] ${what} unavailable, rendering without it:`,
+        result.reason instanceof Error ? result.reason.message : result.reason
+      );
+    }
+  }
+
+  const allSpots = spotsResult.status === "fulfilled" ? spotsResult.value : [];
+  const allScores = scoresResult.status === "fulfilled" ? scoresResult.value : [];
+  const forecast = forecastResult.status === "fulfilled" ? forecastResult.value : [];
   const scoreBySlug: Record<string, number | null> = Object.fromEntries(
     allScores.map((row) => [row.slug, row.score])
   );

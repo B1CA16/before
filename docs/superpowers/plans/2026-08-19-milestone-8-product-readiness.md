@@ -362,6 +362,40 @@ Inserting this milestone shifts the ML work back. Update section 11 of the spec:
 > Rendering it once would have settled it, which is the same mistake as the unaccented Portuguese in the
 > legal pages in Task 4.
 
+> **The build kept failing, and my first two fixes were both wrong. Worth the full account.**
+>
+> Symptom: `Error: API forecast failed: 502` while prerendering one spot, which aborted the whole
+> Vercel build. Cause: prerendering means ~184 requests at a single free Render instance in a few
+> seconds. It answers most and 502s on one, and one throw fails the entire deploy.
+>
+> **Wrong fix 1.** Task 7 made `generateStaticParams` tolerant but left the page render throwing. Only
+> half the build path was protected, so the failure just moved.
+>
+> **Wrong fix 2.** Adding a retry loop that changed nothing. Next memoises fetches with the same URL
+> and options inside a render, so three attempts collapsed into one network call and every attempt was
+> handed the same 502. The code looked obviously correct and the build failed identically.
+>
+> **Wrong fix 3.** Making retries `cache: "no-store"` to force a real request. This was the dangerous
+> one: a no-store fetch pushes the whole route out of static rendering, so pages that happened to hit a
+> retry were built *without* their forecast. The build went green while quietly producing incomplete
+> pages, which is worse than the failure it replaced.
+>
+> **What actually works.** Retries vary the URL (`?_attempt=2`) instead. Each attempt is a distinct
+> cacheable fetch, so it really hits the network and the route stays statically renderable. Verified
+> that the API ignores the parameter and returns a byte-identical payload on all four endpoints.
+> Alongside it, the page uses `Promise.allSettled` so the forecast, spot list and scores each degrade
+> on their own terms rather than taking the page down, with a warning logged per degradation.
+>
+> **Verified with a deliberately flaky proxy** in front of the real API, injecting a transient 502 on
+> first sight of every resource plus one endpoint that always fails. Against **185 injected 502s** the
+> build exits 0 with 195/195 pages and zero prerender errors; only the permanently broken endpoint
+> degrades, and that page still renders 132 visible words with its heading, score, breakdown, nearby
+> spots, JSON-LD and canonical. Healthy API: 195/195 with no warnings. Dead API: exits 0 with 11 pages.
+>
+> The lesson that generalises: **a green build is not evidence that a fix worked.** Two of the three
+> wrong fixes produced a passing or plausible-looking build. Only reproducing the actual fault showed
+> which one was real.
+>
 > **Found only by checking production, which is the point of checking production.** Every Portuguese
 > `og:image` URL was answered with a **307 redirect**, while the English ones returned 200 directly. The
 > cause: the image routes live under `app/[locale]/`, so their real URL always carries a locale segment,

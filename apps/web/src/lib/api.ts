@@ -44,6 +44,65 @@ async function getJson<T>(path: string): Promise<T> {
   return res.json() as Promise<T>;
 }
 
+/**
+ * Fetch a cached endpoint, retrying transient failures.
+ *
+ * This exists because of a build failure, and the failure is worth understanding. Prerendering the
+ * spot pages means 184 requests at the API in a few seconds, and that API is a single free Render
+ * instance. It answered most of them and returned **502** on one, which threw, which failed the entire
+ * Vercel build. One overloaded response cost the whole deploy.
+ *
+ * A 502, 503, 504 or a dropped connection from an instance under load is transient by definition: the
+ * same request a moment later succeeds. So retry those, with a widening gap to let the instance
+ * recover rather than piling on.
+ *
+ * Deliberately NOT retried: 4xx. A 404 means the spot does not exist and a 401 means the token is
+ * wrong, and repeating either just wastes time on an answer that will not change.
+ */
+const TRANSIENT = new Set([408, 425, 429, 500, 502, 503, 504]);
+
+async function fetchWithRetry(
+  url: string,
+  init: RequestInit,
+  label: string,
+  attempts = 3
+): Promise<Response> {
+  let lastError: unknown;
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    try {
+      // A retry has to look like a DIFFERENT fetch, and getting this right took two goes.
+      //
+      // Next memoises fetches with the same URL and options inside a single render, so a naive retry
+      // loop collapses into one network call and every attempt is handed the same failed response.
+      // The first version of this function looked correct, changed nothing, and the build failed on
+      // the same 502.
+      //
+      // The obvious second fix, `cache: "no-store"` on retries, was worse in a way that is easy to
+      // miss: a no-store fetch forces the whole route out of static rendering, so pages that happened
+      // to hit a retry were built *without* their forecast rather than failing loudly. It traded a
+      // broken build for quietly incomplete pages.
+      //
+      // Varying the URL instead keeps every attempt cacheable and statically renderable. The API
+      // ignores the extra parameter, verified against all four endpoints including that the payload
+      // is byte-identical with and without it.
+      const attemptUrl =
+        attempt === 1 ? url : `${url}${url.includes("?") ? "&" : "?"}_attempt=${attempt}`;
+      const res = await fetch(attemptUrl, init);
+      if (res.ok || !TRANSIENT.has(res.status)) return res;
+      lastError = new Error(`${label} failed: ${res.status}`);
+    } catch (error) {
+      // A network-level failure, which a cold or restarting instance also produces.
+      lastError = error;
+    }
+    if (attempt < attempts) {
+      // 400 ms, then 1200 ms. Long enough for a Render instance to finish waking, short enough not
+      // to stall a build.
+      await new Promise((resolve) => setTimeout(resolve, 400 * 3 ** (attempt - 1)));
+    }
+  }
+  throw lastError instanceof Error ? lastError : new Error(`${label} failed`);
+}
+
 export type SpotWithScore = { spot: Spot; now: ScoreNow | null };
 
 export const getSpots = () => getJson<Spot[]>("/spots");
@@ -58,7 +117,11 @@ export async function getSpotWithScore(
   slug: string,
   revalidate = 3600
 ): Promise<SpotWithScore | null> {
-  const res = await fetch(BASE + "/spots/" + slug, { next: { revalidate } });
+  const res = await fetchWithRetry(
+    BASE + "/spots/" + slug,
+    { next: { revalidate } },
+    `API /spots/${slug}`
+  );
   if (res.status === 404) return null;
   if (!res.ok) throw new Error("API /spots/" + slug + " failed: " + res.status);
   return (await res.json()) as SpotWithScore;
@@ -66,19 +129,23 @@ export async function getSpotWithScore(
 
 /** Cached variants for server rendering, where no-store would defeat the point. */
 export async function getForecastCached(slug: string, revalidate = 3600): Promise<ForecastHour[]> {
-  const res = await fetch(BASE + "/spots/" + slug + "/forecast", { next: { revalidate } });
+  const res = await fetchWithRetry(
+    BASE + "/spots/" + slug + "/forecast",
+    { next: { revalidate } },
+    "API forecast"
+  );
   if (!res.ok) throw new Error("API forecast failed: " + res.status);
   return (await res.json()) as ForecastHour[];
 }
 
 export async function getScoresCached(revalidate = 3600): Promise<ScoreNow[]> {
-  const res = await fetch(BASE + "/scores", { next: { revalidate } });
+  const res = await fetchWithRetry(BASE + "/scores", { next: { revalidate } }, "API /scores");
   if (!res.ok) throw new Error("API /scores failed: " + res.status);
   return (await res.json()) as ScoreNow[];
 }
 
 export async function getSpotsCached(revalidate = 3600): Promise<Spot[]> {
-  const res = await fetch(BASE + "/spots", { next: { revalidate } });
+  const res = await fetchWithRetry(BASE + "/spots", { next: { revalidate } }, "API /spots");
   if (!res.ok) throw new Error("API /spots failed: " + res.status);
   return (await res.json()) as Spot[];
 }
