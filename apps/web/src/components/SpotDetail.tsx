@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 
 import type { ForecastHour, ScoreNow, Spot } from "@/lib/api";
 import { getForecast } from "@/lib/api";
+import FavouriteButton from "@/components/FavouriteButton";
 import { ArrowIcon } from "@/components/Icons";
 import { Link } from "@/i18n/navigation";
 import { bestHour, formatHour, upcomingHours } from "@/lib/forecast";
@@ -69,7 +70,10 @@ export default function SpotDetail({
     <div>
       <header className="flex items-start justify-between gap-4">
         <div className="min-w-0 pt-1">
-          <h2 className="title truncate text-primary">{spot.name}</h2>
+          <div className="flex items-center gap-1">
+            <h2 className="title truncate text-primary">{spot.name}</h2>
+            <FavouriteButton slug={spot.slug} />
+          </div>
           <p className="faint mt-0.5">{regions.has(spot.region) ? regions(spot.region) : spot.region}</p>
           <div className="mt-2.5">
             <Chip color={scoreColor(score)}>{words(scoreWordKey(score))}</Chip>

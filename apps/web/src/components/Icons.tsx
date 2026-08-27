@@ -121,6 +121,58 @@ export function TrendIcon({ up = true, ...props }: IconProps & { up?: boolean })
   );
 }
 
+/**
+ * The mark: a breaking wave, and how you claim a spot as one of yours.
+ *
+ * Named for what it means rather than what it draws, because the glyph took six attempts to settle
+ * and a name like `ShakaIcon` would now be a lie. The drawing is the same curl as `WaveLoader`: up
+ * the face, over the lip, hooking back into the hollow, breaking on a waterline. Sharing the loader's
+ * gesture is the point, so the app has one wave rather than two unrelated ones.
+ *
+ * Worth recording why it is not a hand. A shaka is the obvious idea for a surf app and it was tried
+ * six ways: detailed hand (a smudge at 15px), mirrored prongs (unmistakably Mickey Mouse), right
+ * angle, line art, three separated lobes (a propeller), and a tilted silhouette. Every version was
+ * rejected on sight once rendered. The lesson is about the medium, not the effort: a hand is
+ * articulated, and at 19 pixels there is nowhere to put the articulation. A wave is one gesture with
+ * no anatomy to get wrong, so it survives being tiny.
+ *
+ * The hollow is left as negative space rather than filled, for the same reason the loader does it: a
+ * closed path over that gap reads as a dome instead of a barrel.
+ *
+ * State is carried by stroke colour, reinforced three ways that do not depend on colour at all:
+ * `aria-pressed`, the halo on the card, and the group heading in the list.
+ */
+export function MarkIcon({
+  size = 19,
+  className = "",
+  weight = 1.9,
+}: IconProps & { weight?: number }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 16 16"
+      fill="none"
+      stroke="currentColor"
+      strokeLinecap="round"
+      aria-hidden
+      className={`flex-none ${className}`}
+    >
+      {/* the curl: up the face, pitching over the lip, hooking back under */}
+      <path
+        d="M2.8 11.4C3.3 6.6 5.8 2.8 9.5 3.1c2.9.25 4.2 2.8 3.0 4.9-.75-1.6-2.6-2.05-3.65-.3"
+        strokeWidth={weight}
+      />
+      {/* the waterline it is breaking on, held back so it frames the curl instead of competing */}
+      <path
+        d="M1.5 14.1c1.6-.35 3.4.5 5.4.35 2.4-.2 4.2-.9 7.6-.6"
+        strokeWidth={weight * 0.79}
+        opacity="0.55"
+      />
+    </svg>
+  );
+}
+
 /** Share: a node passing outward to two others. */
 export function ShareIcon(props: IconProps) {
   return (

@@ -27,6 +27,16 @@
     "previousMonth": "Previous month",
     "nextMonth": "Next month"
   },
+  "favourites": {
+    "add": "Mark as yours",
+    "added": "Spot marked",
+    "allSpots": "All spots",
+    "countLabel": "{count} spots marked",
+    "empty": "You have not marked any spots yet.",
+    "remove": "Unmark",
+    "removed": "Mark removed",
+    "yours": "Your spots"
+  },
   "footer": {
     "credits": "Forecasts from Open-Meteo. Maps from OpenStreetMap and CARTO.",
     "legal": "Legal",

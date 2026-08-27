@@ -8,6 +8,8 @@ import { Suspense, useEffect, useMemo, useState } from "react";
 import AuthMenu from "@/components/AuthMenu";
 import LanguageSwitch from "@/components/LanguageSwitch";
 import Chip from "@/components/Chip";
+import { useFavourites } from "@/components/FavouritesProvider";
+import MarkCounter from "@/components/MarkCounter";
 import Footer from "@/components/Footer";
 import LogSessionSheet from "@/components/LogSessionSheet";
 import SessionsSheet from "@/components/SessionsSheet";
@@ -16,6 +18,7 @@ import SpotDetail from "@/components/SpotDetail";
 import WaveLoader from "@/components/WaveLoader";
 import Wordmark from "@/components/Wordmark";
 import { getScores, getSpots, type ScoreNow, type SessionRow, type Spot } from "@/lib/api";
+import { rankSpots } from "@/lib/rank";
 import { scoreColor, scoreLabel, scoreWordKey } from "@/lib/score";
 
 // Leaflet touches window, so the map is browser-only.
@@ -75,6 +78,7 @@ function TopBar({
           />
           {t('updated')}
         </span>
+        <MarkCounter />
         <LanguageSwitch />
         <AuthMenu onShowSessions={onShowSessions} />
       </div>
@@ -87,6 +91,7 @@ function HomeInner() {
   // updates below, which deliberately do not re-run the router.
   const t = useTranslations("home");
   const words = useTranslations("score");
+  const { isFavourite, favourites } = useFavourites();
   const params = useSearchParams();
   const initialSpot = params.get("spot");
   // The spot page's breadcrumb links here filtered to a region, so the filter has to be addressable.
@@ -118,10 +123,11 @@ function HomeInner() {
     };
   }, []);
 
-  // Best first, unscored last, so the list answers "where do I go" without reading it all.
+  // Favourites first, then best first, unscored last. The rule lives in lib/rank so it can be tested
+  // without mounting a map.
   const ranked = useMemo(
-    () => [...spots].sort((a, b) => (scores[b.slug]?.score ?? -1) - (scores[a.slug]?.score ?? -1)),
-    [spots, scores]
+    () => rankSpots(spots, scores, isFavourite),
+    [spots, scores, isFavourite]
   );
 
   const visible = useMemo(() => {
@@ -191,8 +197,13 @@ function HomeInner() {
             </div>
           </div>
 
+          {/* When anything is marked, the list supplies its own two headings ("Os teus spots" and
+              "Todos os spots"), so this outer one would be the same words twice, three rows apart.
+              The count is still worth keeping, so it moves to a lone right-aligned row. */}
           <div className="flex items-baseline justify-between px-4 pb-2">
-            <h2 className="section-title">{query.trim() ? t("matches") : t("allSpots")}</h2>
+            <h2 className="section-title">
+              {query.trim() ? t("matches") : favourites.size > 0 ? "" : t("allSpots")}
+            </h2>
             <span className="label">{spots.length ? visible.length : ""}</span>
           </div>
           <div className="min-h-0 flex-1 overflow-y-auto pb-3 pl-3 pr-2">
@@ -220,6 +231,7 @@ function HomeInner() {
             spots={spots}
             scores={scores}
             featured={featured}
+            favourites={favourites}
             selected={selected}
             hovered={hovered}
             onSelect={pick}
@@ -251,11 +263,17 @@ function HomeInner() {
           </div>
 
           {/* Desktop: the selected spot, floating clear of the map edges. */}
+          {/* Margins are symmetric by construction rather than by arithmetic. The height cap is
+              `100% - 2.5rem`, where 100% is the map area and 2.5rem is bottom-5 plus an equal gap at
+              the top, so the panel can never sit closer to one edge than the other. The previous
+              version capped at `100dvh - 9.5rem`, a number that had to be kept in step with the
+              header height by hand and had drifted: it left 3.25rem above and 1.25rem below. */}
           {selectedSpot && (
-            <div className="panel-raised absolute bottom-5 right-5 z-[900] hidden w-[23rem] max-w-[calc(100%-2.5rem)] p-2 md:block">
+            <div className="panel-raised absolute bottom-5 right-5 z-[900] hidden max-h-[calc(100%-2.5rem)] w-[23rem] max-w-[calc(100%-2.5rem)] flex-col p-2 md:flex">
               {/* The scroll lives on the inner box, so the outer padding becomes the scrollbar's
-                  margin on the top, bottom and right. */}
-              <div className="scroll-inset max-h-[calc(100dvh-9.5rem)] overflow-y-auto px-3 py-3">
+                  margin on the top, bottom and right. min-h-0 is what allows a flex child to be
+                  shorter than its content and therefore to scroll at all. */}
+              <div className="scroll-inset min-h-0 flex-1 overflow-y-auto px-3 py-3">
                 <SpotDetail
                   key={selectedSpot.slug}
                   spot={selectedSpot}

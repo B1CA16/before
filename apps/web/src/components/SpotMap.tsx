@@ -59,11 +59,16 @@ function pinIcon(
   score: number | null,
   featured: boolean,
   selected: boolean,
-  hovered: boolean
+  hovered: boolean,
+  favourite: boolean
 ): L.DivIcon {
   const color = scoreColor(score);
 
-  if (!featured && !selected) {
+  // A favourite never recedes to a dot. "Featured" means top six by rank today, which is about the
+  // conditions; favouriting is about you, and a spot you deliberately marked should stay findable on
+  // a flat week when it would otherwise drop out of the leading handful. This is the one place where
+  // a personal signal overrides the global ranking.
+  if (!featured && !selected && !favourite) {
     const d = hovered ? 16 : 12;
     return L.divIcon({
       className: hovered ? "pin-hovered" : "",
@@ -84,9 +89,17 @@ function pinIcon(
     : "box-shadow:0 0 0 2px var(--color-marker-edge), 0 4px 12px rgb(16 24 40 / .32);";
   // A radar ring pings off the selected pin, echoing the mark in the logo.
   const ping = selected ? '<span class="pin-ping"></span>' : "";
+  // A badge rather than a different pin colour or shape: colour already means score and shape
+  // already means rank, so overloading either would make the map ambiguous. It sits outside the
+  // rotated element, or it would arrive at 45 degrees with everything else.
+  //
+  // Deliberately a bare dot with no glyph inside. The badge is 15px across, and nothing legible fits
+  // in it: a wave at that size is a smudge, and the heart that used to be here was a leftover from
+  // before the icon changed, so the map was saying one thing and the rest of the app another.
+  const badge = favourite ? '<span class="pin-mark" aria-hidden></span>' : "";
   return L.divIcon({
     className: hovered ? "pin-hovered" : "",
-    html: `<div style="position:relative;width:${size}px;height:${size}px;">${ping}
+    html: `<div style="position:relative;width:${size}px;height:${size}px;">${ping}${badge}
         <div class="pin-shape" style="width:${size}px;height:${size}px;background:${color};
         transform:rotate(45deg);border-radius:9999px 9999px 9999px 3px;display:flex;
         align-items:center;justify-content:center;${ring}">
@@ -103,6 +116,7 @@ export default function SpotMap({
   spots,
   scores,
   featured,
+  favourites,
   selected,
   hovered,
   onSelect,
@@ -111,6 +125,7 @@ export default function SpotMap({
   spots: Spot[];
   scores: Record<string, ScoreNow>;
   featured: Set<string>;
+  favourites: Set<string>;
   selected: string | null;
   hovered: string | null;
   onSelect: (slug: string) => void;
@@ -134,7 +149,8 @@ export default function SpotMap({
             scores[spot.slug]?.score ?? null,
             featured.has(spot.slug),
             spot.slug === selected,
-            spot.slug === hovered
+            spot.slug === hovered,
+            favourites.has(spot.slug)
           )}
           zIndexOffset={spot.slug === selected ? 1000 : 0}
           eventHandlers={{

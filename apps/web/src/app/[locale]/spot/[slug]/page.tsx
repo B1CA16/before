@@ -4,10 +4,12 @@ import { notFound } from "next/navigation";
 
 import AuthMenu from "@/components/AuthMenu";
 import Chip from "@/components/Chip";
+import FavouriteButton from "@/components/FavouriteButton";
 import Footer from "@/components/Footer";
 import { PeriodIcon, PinIcon, SwellIcon, WindIcon } from "@/components/Icons";
 import LanguageSwitch from "@/components/LanguageSwitch";
 import LogSessionButton from "@/components/LogSessionButton";
+import MarkCounter from "@/components/MarkCounter";
 import MiniMapCard from "@/components/MiniMapCard";
 import ScoreBreakdown from "@/components/ScoreBreakdown";
 import ScoreTimeline from "@/components/ScoreTimeline";
@@ -178,6 +180,7 @@ export default async function SpotPage({
           <SpotSearch spots={allSpots} scores={scoreBySlug} />
         </div>
         <div className="ml-auto flex flex-none items-center gap-2">
+          <MarkCounter />
           <LanguageSwitch />
           <AuthMenu />
         </div>
@@ -218,7 +221,13 @@ export default async function SpotPage({
           <div className="panel p-5">
             <div className="flex items-start justify-between gap-4">
               <div className="min-w-0">
-                <h1 className="title text-primary">{spot.name}</h1>
+                {/* A client island on an otherwise static page. The mark needs to know who you are,
+                    which the server cannot know for a page prerendered once and cached for an hour,
+                    so it resolves itself after hydration and renders nothing when signed out. */}
+                <div className="flex items-center gap-1.5">
+                  <h1 className="title text-primary">{spot.name}</h1>
+                  <FavouriteButton slug={spot.slug} size={22} />
+                </div>
                 <p className="faint mt-0.5 flex items-center gap-1.5">
                   <PinIcon size={13} />
                   {t("coast", { region })}

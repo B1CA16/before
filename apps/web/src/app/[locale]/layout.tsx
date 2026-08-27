@@ -5,6 +5,8 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
 
 import { AuthProvider } from "@/components/AuthProvider";
+import { FavouritesProvider } from "@/components/FavouritesProvider";
+import { MarkFxProvider } from "@/components/MarkFx";
 import { routing } from "@/i18n/routing";
 
 import "../globals.css";
@@ -56,7 +58,13 @@ export default async function LocaleLayout({
     <html lang={locale} className={`${jakarta.variable} h-full`}>
       <body className="h-full">
         <NextIntlClientProvider>
-          <AuthProvider>{children}</AuthProvider>
+          {/* Inside AuthProvider, because favourites only exist for a signed-in person and the
+              provider re-fetches when that identity changes. */}
+          <AuthProvider>
+            <FavouritesProvider>
+              <MarkFxProvider>{children}</MarkFxProvider>
+            </FavouritesProvider>
+          </AuthProvider>
         </NextIntlClientProvider>
       </body>
     </html>

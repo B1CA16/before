@@ -177,6 +177,21 @@ export const deleteSession = (token: string, id: number) =>
 export const deleteAccount = (token: string) =>
   authed<void>("/account", token, { method: "DELETE" });
 
+/* --- favourites --------------------------------------------------------------------------------
+ * Slugs only, on their own authenticated request. The public /spots and /scores responses stay
+ * impersonal, which is what lets them keep a shared `revalidate` cache and stay prerenderable: per
+ * user data in a shared cache is served to whoever asks next.
+ */
+
+export const getFavourites = (token: string) => authed<string[]>("/favourites", token);
+
+/** Idempotent, so the caller never has to know the current state before asking. */
+export const addFavourite = (token: string, slug: string) =>
+  authed<void>(`/favourites/${slug}`, token, { method: "PUT" });
+
+export const removeFavourite = (token: string, slug: string) =>
+  authed<void>(`/favourites/${slug}`, token, { method: "DELETE" });
+
 /**
  * Conditions on record for one spot at one hour. Resolves to null when we hold nothing for that
  * hour, which is a real answer worth showing: without conditions the session cannot become a

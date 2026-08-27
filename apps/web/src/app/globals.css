@@ -32,6 +32,11 @@
   /* Ink that sits on a saturated score colour. Always dark, whatever the surface does. */
   --color-badge-ink: #0d1117;
 
+  /* Marked spots. A true blue, chosen against the palette rather than by eye: it has to clear the
+     teal "fun" score (#2f9fb5) and the violet accent (#5227e5), because a mark must never be
+     mistaken for a score or for selection state. Nothing else in the app uses blue. */
+  --color-mark: #1e6fe8;
+
   /* The sea, matching the basemap so the map never flashes a different colour while loading. */
   --color-water: #dfe6ea;
   /* Pin and marker outline, so markers read against both land and water. */
@@ -254,6 +259,177 @@ body {
     font-weight: 500;
     color: var(--color-faint);
     min-width: 0;
+  }
+
+  /* --- marked spots ---------------------------------------------------------------------------
+     A marked spot has to be recognisable in a scanning column without shouting over the score badge,
+     which is the loudest thing on the card and must stay that way. A soft halo does that: it changes
+     the card's weight rather than its colour. */
+  .row-card.is-marked {
+    border-color: #cfe0fa;
+    box-shadow:
+      0 0 0 3px rgb(30 111 232 / 0.07),
+      0 2px 8px rgb(30 111 232 / 0.1);
+  }
+
+  /* The heading over each group. Without it the pinned spots read as a ranking glitch: a 4.7 above a
+     4.8 with no reason given. */
+  .list-head {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin: 0 0 0.45rem 0.15rem;
+    font-size: var(--text-label);
+    font-weight: 700;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--color-secondary);
+    line-height: 1;
+  }
+  .list-head.is-marked {
+    color: var(--color-mark);
+  }
+  .list-head-rule {
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, currentColor, transparent);
+    opacity: 0.32;
+  }
+
+  /* The mark toggle. */
+  .mark {
+    display: inline-grid;
+    place-items: center;
+    flex: none;
+    height: 1.75rem;
+    width: 1.75rem;
+    border-radius: 999px;
+    color: var(--color-faint);
+    cursor: pointer;
+    transition:
+      color 0.15s ease,
+      background-color 0.15s ease,
+      transform 0.15s ease;
+  }
+  .mark:hover {
+    color: var(--color-mark);
+    background: var(--color-inset);
+  }
+  .mark.is-on {
+    color: var(--color-mark);
+  }
+  .mark:active {
+    transform: scale(0.86);
+  }
+
+  /* The counter the thrown shaka lands in. */
+  .mark-counter {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    height: 2.125rem;
+    padding: 0 0.6rem;
+    border-radius: 999px;
+    background: var(--color-inset);
+    border: 1px solid var(--color-hairline);
+    color: var(--color-mark);
+    font-size: var(--text-meta);
+    font-weight: 800;
+    flex: none;
+  }
+  .mark-counter.is-caught {
+    animation: mark-catch 0.45s cubic-bezier(0.2, 1.6, 0.4, 1);
+  }
+  .mark-counter-ring {
+    position: absolute;
+    inset: -3px;
+    border-radius: 999px;
+    border: 2px solid var(--color-mark);
+    opacity: 0;
+    pointer-events: none;
+  }
+  .mark-counter.is-caught .mark-counter-ring {
+    animation: mark-ping 0.7s ease-out;
+  }
+  /* The badge takes the impact, then settles. */
+  @keyframes mark-catch {
+    0% {
+      transform: scale(1);
+    }
+    40% {
+      transform: scale(1.22);
+    }
+    100% {
+      transform: scale(1);
+    }
+  }
+  /* Same radar ring as the wordmark's O and the selected map pin. */
+  @keyframes mark-ping {
+    from {
+      transform: scale(0.6);
+      opacity: 0.8;
+    }
+    to {
+      transform: scale(2);
+      opacity: 0;
+    }
+  }
+
+  /* --- the toast --- */
+  .toast-wrap {
+    position: fixed;
+    left: 50%;
+    bottom: 1.25rem;
+    transform: translateX(-50%);
+    z-index: 3000;
+    pointer-events: none;
+    padding: 0 1rem;
+    max-width: 100%;
+  }
+  .toast {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.6rem 0.95rem;
+    border-radius: 999px;
+    background: var(--color-panel);
+    border: 1px solid var(--color-hairline);
+    box-shadow: var(--shadow-3);
+    font-size: var(--text-meta);
+    font-weight: 600;
+    color: var(--color-primary);
+    white-space: nowrap;
+    animation: toast-rise 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+  .toast .text-mark {
+    color: var(--color-mark);
+  }
+  @keyframes toast-rise {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* The marker dot on a marked map pin. Sits above the rotated teardrop, so it stays upright.
+     No glyph inside: at this size nothing is legible, and a solid dot in the marker colour reads
+     faster than a smudge would. */
+  .pin-mark {
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    z-index: 2;
+    height: 11px;
+    width: 11px;
+    border-radius: 999px;
+    background: var(--color-mark);
+    border: 1.5px solid var(--color-marker-edge);
+    box-shadow: 0 1px 3px rgb(16 24 40 / 0.35);
   }
 
   /* --- the legal pages ---

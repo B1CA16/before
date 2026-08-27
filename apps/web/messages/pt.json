@@ -1,6 +1,6 @@
 {
   "auth": {
-    "account": "A sua conta",
+    "account": "A tua conta",
     "checking": "A verificar",
     "codeLabel": "Código de 6 dígitos",
     "codeSentTo": "Enviámos um código de 6 dígitos para {email}.",
@@ -10,8 +10,8 @@
     "emailLabel": "Endereço de email",
     "emailMeCode": "Enviar-me um código",
     "emailPlaceholder": "eu@exemplo.com",
-    "enterCode": "Introduza o código",
-    "expired": "A sua sessão expirou. Entre novamente para continuar.",
+    "enterCode": "Escreve o código",
+    "expired": "A tua sessão expirou. Entra outra vez para continuar.",
     "notConfigured": "A autenticação não está configurada nesta versão",
     "or": "ou",
     "privateNote": "As sessões que registar são privadas desta conta.",
@@ -20,12 +20,22 @@
     "signIn": "Entrar",
     "signOut": "Sair",
     "signedIn": "Sessão iniciada",
-    "whySignIn": "Para registar e avaliar as sessões que surfa. Ficam privadas da sua conta.",
-    "yourSessions": "As suas sessões"
+    "whySignIn": "Para registares e avaliares as sessões que surfas. Ficam privadas da tua conta.",
+    "yourSessions": "As tuas sessões"
   },
   "calendar": {
     "previousMonth": "Mês anterior",
     "nextMonth": "Mês seguinte"
+  },
+  "favourites": {
+    "add": "Marcar como teu",
+    "added": "Spot marcado",
+    "allSpots": "Todos os spots",
+    "countLabel": "{count} spots marcados",
+    "empty": "Ainda não marcaste nenhum spot.",
+    "remove": "Desmarcar",
+    "removed": "Marca removida",
+    "yours": "Os teus spots"
   },
   "footer": {
     "credits": "Previsões do Open-Meteo. Mapas do OpenStreetMap e da CARTO.",
@@ -49,7 +59,7 @@
     "thisSpot": "Este spot",
     "expand": "Expandir",
     "collapse": "Recolher",
-    "tapForWeek": "{word}, toque para ver a semana"
+    "tapForWeek": "{word}, toca para ver a semana"
   },
   "legal": {
     "crumbHome": "Início",
@@ -66,7 +76,7 @@
     "editSubtitle": "Altere a avaliação que deu.",
     "thanks": "Obrigado, é mais um exemplo para o modelo.",
     "updated": "A avaliação foi atualizada.",
-    "signInFirst": "Entre primeiro, para que as suas sessões fiquem guardadas na sua conta e privadas.",
+    "signInFirst": "Entra primeiro, para que as tuas sessões fiquem guardadas na tua conta e privadas.",
     "spot": "Spot",
     "when": "Quando",
     "now": "Agora",
@@ -74,12 +84,12 @@
     "yesterday": "Ontem",
     "hour": "Hora",
     "anyPastDate": "Qualquer data passada. As sessões antigas contam tanto como as recentes.",
-    "identityLocked": "O spot e a hora identificam a sessão, por isso não podem ser alterados aqui. Apague-a e registe outra vez para a mudar.",
+    "identityLocked": "O spot e a hora identificam a sessão, por isso não podem ser alterados aqui. Apaga-a e regista outra vez para a mudar.",
     "onRecord": "Registado",
     "checkingConditions": "A verificar as condições dessa hora",
     "measured": "Condições medidas.",
     "forecastOnly": "Condições previstas, ainda não confirmadas pelo arquivo.",
-    "noConditions": "Não temos condições para essa hora, por isso esta sessão não pode treinar o modelo. Registe-a se quiser, ou confirme a data.",
+    "noConditions": "Não temos condições para essa hora, por isso esta sessão não pode treinar o modelo. Regista-a se quiseres, ou confirma a data.",
     "howWasIt": "Como estava",
     "ratingHint": "1 é não valeu a pena, 5 é excelente.",
     "rating1": "Não valeu a pena",
@@ -94,7 +104,7 @@
     "submit": "Registar esta sessão",
     "saveChanges": "Guardar alterações",
     "saving": "A guardar",
-    "pickRating": "Escolha primeiro uma avaliação.",
+    "pickRating": "Escolhe primeiro uma avaliação.",
     "logAnother": "Registar outra",
     "ratedSummary": "{name}, avaliada com {rating} em 5. Já faz parte daquilo que o modelo vai aprender.",
     "saveFailed": "Não foi possível guardar essa sessão.",
@@ -139,27 +149,27 @@
     "placeholder": "Selecionar"
   },
   "sessions": {
-    "accountDeleteFailed": "Não foi possível apagar a sua conta.",
+    "accountDeleteFailed": "Não foi possível apagar a tua conta.",
     "cancel": "Cancelar",
     "close": "Fechar",
-    "confirmAccount": "Apagar a sua conta e as {count} sessões? Isto não pode ser desfeito.",
+    "confirmAccount": "Apagar a tua conta e as {count} sessões? Isto não pode ser desfeito.",
     "confirmDelete": "Apagar esta sessão? A avaliação desaparece definitivamente.",
-    "dataExplains": "Guardamos o seu endereço de email e as sessões que registar. As sessões são privadas da sua conta: mais ninguém as pode ler, e servem para ensinar à pontuação como é realmente um bom surf.",
+    "dataExplains": "Guardamos o teu endereço de email e as sessões que registares. As sessões são privadas da tua conta: mais ninguém as pode ler, e servem para ensinar à pontuação como é realmente um bom surf.",
     "delete": "Apagar",
     "deleteAccount": "Apagar a minha conta",
     "deleteEverything": "Apagar tudo",
     "deleteFailed": "Não foi possível apagar essa sessão.",
     "deleting": "A apagar",
-    "deletionExplains": "Apagar a conta remove o seu email e todas as sessões com ele, de imediato e definitivamente.",
+    "deletionExplains": "Apagar a conta remove o teu email e todas as sessões com ele, de imediato e definitivamente.",
     "edit": "Editar",
     "empty": "Ainda não registou nada. Avalie uma sessão que surfou e aparecerá aqui.",
     "keep": "Manter",
     "loadFailed": "Não foi possível carregar as sessões.",
-    "loading": "A carregar as suas sessões",
+    "loading": "A carregar as tuas sessões",
     "outOf": "{rating}/5",
     "privacyLink": "O que guardamos sobre si",
-    "title": "As suas sessões",
-    "yourData": "Os seus dados"
+    "title": "As tuas sessões",
+    "yourData": "Os teus dados"
   },
   "spot": {
     "angles": "Ângulos",

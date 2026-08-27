@@ -205,15 +205,58 @@ Inserting this milestone shifts the ML work back. Update section 11 of the spec:
 
 ### Task 5: favourites
 
-- [ ] Migration: `favourites (user_id, spot_id)` with the same owner-scoped RLS as `surf_sessions`, and
-      the same reminder in the comment that the API's own filter is the real control.
-- [ ] `PUT`/`DELETE /favourites/{slug}` and inclusion in the spots response for a signed-in caller.
-- [ ] Heart on each spot card and on the spot page; favourites sort to the top of the ranked list and
-      get a distinct marker on the map.
-- [ ] Tests: one user's favourites are invisible to another, and favouriting twice is idempotent.
-- [ ] Note for M10: a favourite is a per-user signal, which is the first ingredient of the v2
-      personalisation the spec defers. Do not build on that yet, just avoid designing it out.
+- [x] Migration `20260825203334_create_favourites.sql`: `(user_id, spot_id)` with a **composite
+      primary key**, which is where the idempotency actually comes from. Favouriting twice cannot
+      create two rows, so "already favourited" stops being an error the API must detect and becomes a
+      state the database cannot represent. Owner-scoped RLS, plus the same comment as `surf_sessions`
+      that the API's own filter is the real control. No update policy: there is nothing to update.
+- [x] Validated in a rolled-back transaction before applying: columns, idempotency, the spot cascade,
+      RLS on, three policies. Then pushed (`supabase db push`).
+- [x] **Deviated from this plan, deliberately.** The bullet said "inclusion in the spots response for
+      a signed-in caller", which conflicts with Task 2: `/spots` and `/scores` are fetched with a
+      shared `revalidate` cache, so per-user data in them is cached under one visitor and served to
+      the next. That is a leak, not a style question. Favourites got their own endpoint and the public
+      responses stayed impersonal, which is what keeps them cacheable and prerenderable.
+- [x] `GET /favourites` (slugs only), `PUT`/`DELETE /favourites/{slug}`, both idempotent. DELETE of
+      something not favourited is 204, because the caller asked for "not favourited" and that is the
+      resulting state.
+- [x] A mark on the ranked list, the map's detail panel and the spot page, where it is a client
+      island on an otherwise static page. Renders nothing when signed out rather than baiting a
+      sign-in.
+- [x] **The glyph took seven attempts, and the lesson is about the medium rather than the effort.** A
+      shaka is the obvious icon for a surf app, and it was drawn six ways: detailed hand, mirrored
+      prongs, right angle, line art, three separated lobes, tilted silhouette. Every one was rejected
+      on sight once rendered. A hand is articulated, and at 19px there is nowhere to put the
+      articulation: joined digits read as a blob, separated ones as a propeller, mirrored ones as
+      Mickey Mouse. The answer was to stop drawing a hand. A **breaking wave** is one gesture with no
+      anatomy to get wrong, it survives 15px, and it is the same curl as `WaveLoader`, so the app now
+      has one wave rather than two unrelated ones. The component is named `MarkIcon` for what it means
+      rather than what it draws, precisely because the glyph has already changed six times.
+- [x] Colour picked against the palette rather than by eye: `#1e6fe8`, which clears both the teal
+      "fun" score (`#2f9fb5`) and the violet accent (`#5227e5`), because a mark must never read as a
+      score or as selection state. Token renamed `--color-mark`.
+- [x] Every option at every step was rendered at 15, 19, 22 and 46px and reviewed as pixels before
+      being offered. That is the only reason the failures were caught at all: each rejected version
+      looked perfectly reasonable as path data.
+- [x] Sorting extracted to `lib/rank.ts` so it is testable without mounting a map. Favourites first,
+      then by score **within each group**: sorting them to the top in arbitrary order would trade one
+      useful ranking for none.
+- [x] Map: a favourite never recedes to a dot, and carries a heart badge. Colour already means score
+      and shape already means rank, so a third meaning needed a third channel.
+- [x] Tests: 8 API (both isolation cases, both idempotency cases, unknown slugs, auth required, CORS)
+      and 7 for the ranking rule. The real SQL was also exercised by hand against the live database
+      with two users, since the pytest fakes enforce ownership themselves and so cannot catch a
+      missing `WHERE`. Mutation-checked both: removing the `WHERE` leaks, and the old CORS list 400s.
+- [x] Note for M10: a favourite is a per-user signal, the first ingredient of the v2 personalisation
+      the spec defers. Nothing is built on it. The table is keyed by user rather than by spot, which
+      is what keeps that door open; a global popularity counter would have closed it.
 - [ ] **Commit:** `feat: add favourite spots`
+
+> **A real bug this surfaced, invisible to every server-side test.** The API's CORS `allow_methods`
+> listed GET, POST, DELETE and OPTIONS. `PUT /favourites/{slug}` would have been blocked by the
+> browser in production while looking perfectly healthy to curl, TestClient and every server-to-server
+> caller, all of which ignore CORS entirely. Found only by driving the real UI in a browser. Fixed,
+> and covered by a preflight test that fails against the old list.
 
 ### Task 6: a map you can actually use
 
@@ -280,6 +323,26 @@ Inserting this milestone shifts the ML work back. Update section 11 of the spec:
 - `curl` on a spot URL returns HTML containing the spot name and score.
 - **And then the actual next step, which is not code:** send it to four or five people who surf, and run
   `label_report.py` a week later.
+
+## Found during M8, needs its own work
+
+- **The CARTO basemap now requires an API key.** Tiles return HTTP 200 with a 1,790 byte watermark
+  ("API KEY REQUIRED") instead of map data, cached for 180 days, with no rate-limit header, so this is
+  a policy change on their side rather than throttling. The live map is affected. Options: register a
+  free CARTO key, or move to OpenFreeMap or Stadia. **If the provider changes, the privacy policy names
+  CARTO by name in the recipients table and in the "leaving the EU" section, and both have to change in
+  the same commit.**
+
+- **Shakas as kudos, not as bookmarks** (Francisco's idea, and a better use of the gesture than the one
+  it was rejected for). A shaka is something you give *another surfer*, so it belongs on someone else's
+  logged session, the way Strava kudos work, not on a beach you want to remember. It also gives people
+  a reason to come back and look at each other's logs, which is the only mechanism discussed so far
+  that might generate labels without the owner asking for them each time.
+
+  Blocked on something real: sessions are private to the account today, and the privacy policy states
+  that plainly ("As sessões que regista nunca são mostradas a outros utilizadores como sendo suas").
+  Making any of them visible is a change of purpose that needs a policy change and, arguably, opt-in
+  consent rather than a quiet default. Worth designing properly rather than bolting on.
 
 ## Deferred (not in M8)
 

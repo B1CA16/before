@@ -171,6 +171,72 @@ class SupabaseRepository:
             )
             return _rows_as_dicts(cur)
 
+    def list_favourites(self, user_id: str) -> list[str]:
+        """The caller's favourited slugs, and nothing else.
+
+        Slugs rather than whole spot rows: the client already holds every spot from the cached
+        `/spots` response, so returning them again would be the same data twice, on the one request
+        that cannot be shared-cached. This endpoint carries the personal layer only.
+        """
+        with self.pool.connection() as conn:
+            cur = conn.execute(
+                """
+                select sp.slug
+                from favourites f
+                join spots sp on sp.id = f.spot_id
+                where f.user_id = %(user_id)s
+                order by sp.slug
+                """,
+                {"user_id": user_id},
+            )
+            return [row[0] for row in cur.fetchall()]
+
+    def add_favourite(self, user_id: str, slug: str) -> bool:
+        """Favourite a spot. False only if the slug does not exist.
+
+        `on conflict do nothing` makes a repeat call a no-op rather than an error, so the endpoint is
+        idempotent: the client can fire it without first knowing the current state, and a double tap
+        or a retried request cannot fail. The composite primary key is what makes this safe.
+        """
+        with self.pool.connection() as conn:
+            cur = conn.execute(
+                """
+                insert into favourites (user_id, spot_id)
+                select %(user_id)s, id from spots where slug = %(slug)s
+                on conflict do nothing
+                """,
+                {"user_id": user_id, "slug": slug},
+            )
+            # rowcount is 0 for both "no such spot" and "already favourited", so it cannot
+            # distinguish them. Ask the spots table directly instead.
+            if cur.rowcount == 1:
+                return True
+            exists = conn.execute(
+                "select 1 from spots where slug = %(slug)s", {"slug": slug}
+            ).fetchone()
+            return exists is not None
+
+    def remove_favourite(self, user_id: str, slug: str) -> bool:
+        """Un-favourite a spot. False only if the slug does not exist.
+
+        Also idempotent: removing something you have not favourited is a success, because the state
+        the caller asked for ("not favourited") is the state they end up in.
+        """
+        with self.pool.connection() as conn:
+            # The user_id filter is the access control, since RLS does not apply to this connection.
+            conn.execute(
+                """
+                delete from favourites
+                where user_id = %(user_id)s
+                  and spot_id = (select id from spots where slug = %(slug)s)
+                """,
+                {"user_id": user_id, "slug": slug},
+            )
+            exists = conn.execute(
+                "select 1 from spots where slug = %(slug)s", {"slug": slug}
+            ).fetchone()
+            return exists is not None
+
     def delete_account(self, user_id: str) -> bool:
         """Erase an account and everything hanging off it: the GDPR right to erasure.
 
