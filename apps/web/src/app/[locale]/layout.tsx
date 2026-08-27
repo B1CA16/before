@@ -59,6 +59,18 @@ export async function generateMetadata({
       title: t("title"),
       description: t("description"),
     },
+    // Search Console ownership verification, only emitted when the token is configured.
+    //
+    // This exists because the site runs on a *.vercel.app subdomain, where the usual DNS TXT method is
+    // impossible: that would require owning vercel.app. The meta tag is the remaining option, so
+    // Google hands you a token and this puts it in the head. Harmless and absent by default.
+    ...(process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION
+      ? {
+          verification: {
+            google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION,
+          },
+        }
+      : {}),
   };
 }
 

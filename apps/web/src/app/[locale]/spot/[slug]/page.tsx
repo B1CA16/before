@@ -57,8 +57,27 @@ import { scoreColor, scoreLabel, scoreWordKey, windWordKey } from "@/lib/score";
 export const revalidate = 3600;
 
 export async function generateStaticParams() {
-  const spots = await getSpotsCached();
-  return routing.locales.flatMap((locale) => spots.map((s) => ({ locale, slug: s.slug })));
+  // Deliberately tolerant of an unreachable API, and that is about production, not about CI.
+  //
+  // Throwing here fails the entire build. The API runs on a free Render instance that sleeps when
+  // idle, so a deploy that happens to land while it is cold would take the whole site down rather
+  // than just the spot pages. Returning an empty list instead means nothing is prerendered and every
+  // spot page is rendered on demand at request time, when the API is far more likely to be awake.
+  // `dynamicParams` defaults to true, which is what makes that fallback work.
+  //
+  // The failure is logged loudly rather than swallowed, because a build that quietly prerenders zero
+  // of 184 pages looks identical to a healthy one in the deploy summary.
+  try {
+    const spots = await getSpotsCached();
+    return routing.locales.flatMap((locale) => spots.map((s) => ({ locale, slug: s.slug })));
+  } catch (error) {
+    console.warn(
+      "[build] could not reach the API, so no spot pages will be prerendered. " +
+        "They will still render on demand. Cause:",
+      error instanceof Error ? error.message : error
+    );
+    return [];
+  }
 }
 
 export async function generateMetadata({

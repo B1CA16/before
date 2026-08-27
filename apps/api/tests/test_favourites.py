@@ -105,7 +105,7 @@ def test_favouriting_twice_is_idempotent():
 
 
 def test_unfavouriting_something_not_favourited_succeeds():
-    """204 rather than 404: the caller asked for "not favourited" and that is the resulting state."""
+    """204 rather than 404: "not favourited" is the state the caller asked for."""
     _setup(FakeRepo())
     client = _as("user-a")
 
@@ -127,7 +127,7 @@ def test_favourite_then_unfavourite_round_trips():
 
 
 def test_unknown_spot_is_404_on_both_verbs():
-    """A typo in a slug should say so, rather than silently storing nothing and reporting success."""
+    """A typo in a slug should say so, not silently store nothing and report success."""
     _setup(FakeRepo())
     client = _as("user-a")
 

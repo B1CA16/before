@@ -17,8 +17,7 @@ _SPOT_COLUMNS = "slug, name, region, latitude, longitude, orientation_deg"
 # Only hours still ahead. Old forecast rows are never pruned, so without this the endpoint returned
 # 816 rows where the interface uses 147, paying to build, validate and serialise each one: 184 KB
 # and 825 ms a request, against a query taking 2.3 ms. The database was never the bottleneck.
-# Sending
-# five times less matters most on the connection this gets used on, in a car park.
+# Sending five times less matters most on the connection this gets used on, in a car park.
 _FORECAST_QUERY = """
 select c.observed_at, s.orientation_deg,
        c.swell_height_m, c.swell_period_s, c.swell_direction_deg,
@@ -194,9 +193,10 @@ class SupabaseRepository:
     def add_favourite(self, user_id: str, slug: str) -> bool:
         """Favourite a spot. False only if the slug does not exist.
 
-        `on conflict do nothing` makes a repeat call a no-op rather than an error, so the endpoint is
-        idempotent: the client can fire it without first knowing the current state, and a double tap
-        or a retried request cannot fail. The composite primary key is what makes this safe.
+        `on conflict do nothing` makes a repeat call a no-op rather than an error, so the
+        endpoint is idempotent: the client can fire it without first knowing the current state,
+        and a double tap or a retried request cannot fail. The composite primary key is what
+        makes this safe.
         """
         with self.pool.connection() as conn:
             cur = conn.execute(

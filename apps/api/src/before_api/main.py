@@ -32,10 +32,10 @@ app.add_middleware(
     # POST and DELETE for session logging, PUT for favourites. OPTIONS is the preflight the browser
     # sends before any of them.
     #
-    # This list is easy to forget when adding a verb, and the failure is invisible to every test that
-    # does not use a browser: server-to-server calls and TestClient ignore CORS entirely, so the
-    # endpoint looks perfectly healthy while the actual app cannot reach it. PUT was missing here and
-    # only surfaced by driving the UI.
+    # This list is easy to forget when adding a verb, and the failure is invisible to every
+    # test that does not use a browser: server-to-server calls and TestClient ignore CORS
+    # entirely, so the endpoint looks perfectly healthy while the real app cannot reach it.
+    # PUT was missing here and only surfaced by driving the UI.
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
@@ -128,10 +128,10 @@ def my_sessions(user_id: CurrentUser, repo: RepoDep):
 
 
 # --- favourites -----------------------------------------------------------------------------------
-# A separate endpoint rather than a flag on /spots, and that is a caching decision more than an API
-# one. /spots and /scores are fetched with `revalidate`, which is a SHARED server-side cache: personal
-# data in either response would be cached under one visitor and served to the next. Keeping the public
-# data impersonal is what lets it stay cached and prerendered at all.
+# A separate endpoint rather than a flag on /spots, and that is a caching decision more than an
+# API one. /spots and /scores are fetched with `revalidate`, which is a SHARED server-side cache:
+# per-user data in either response would be cached under one visitor and served to the next.
+# Keeping the public data impersonal is what lets it stay cached and prerendered at all.
 
 
 @app.get("/favourites", response_model=list[str])
@@ -152,7 +152,7 @@ def add_favourite(slug: str, user_id: CurrentUser, repo: RepoDep):
 
 @app.delete("/favourites/{slug}", status_code=204)
 def remove_favourite(slug: str, user_id: CurrentUser, repo: RepoDep):
-    """204 even when it was not favourited: the caller asked for "not favourited" and that is true."""
+    """204 even when it was not favourited: that is the state the caller asked for."""
     if not repo.remove_favourite(user_id, slug):
         raise HTTPException(status_code=404, detail="spot not found")
 

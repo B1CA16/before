@@ -362,6 +362,26 @@ Inserting this milestone shifts the ML work back. Update section 11 of the spec:
 > Rendering it once would have settled it, which is the same mistake as the unaccented Portuguese in the
 > legal pages in Task 4.
 
+> **Two CI failures after committing Task 7, one of which was a real production fragility.**
+>
+> 1. **The web build required a live API.** `generateStaticParams` fetched the spot list and threw when
+>    it could not, failing the whole build with `ECONNREFUSED`. CI has no API, so it broke there first,
+>    but the same code path runs on Vercel: the API is a free Render instance that sleeps when idle, so
+>    a deploy landing while it was cold would have taken the entire site down rather than just the spot
+>    pages. It only ever worked because the keep-warm cron happens to hold Render awake. Now wrapped:
+>    an unreachable API logs loudly and prerenders nothing, and the 184 spot pages render on demand
+>    instead, which is when the API is most likely to be up. Verified both ways against a dead port:
+>    195/195 pages when the API is reachable, exit 0 with 11 pages and a warning when it is not.
+>
+>    The warning is loud on purpose. A build that quietly prerenders zero of 184 pages looks identical
+>    to a healthy one in a deploy summary.
+>
+> 2. **Eight `ruff` E501 line-too-long errors**, all in comments written during this milestone. My own
+>    verification ran the web lint, `tsc` and `pytest` but never `ruff`, so I reported "clean" on a tree
+>    that was not. The lesson is not about line length: "all checks pass" is only ever true of the
+>    checks actually run, and CI ran one I had skipped. Local verification now includes
+>    `ruff check` and `ruff format --check`.
+>
 > **Honest expectation setting, kept from the original plan:** this earns traffic over months, not days.
 > It is here so the slow path exists, not because it will produce labels this week. The thing that
 > produces labels is still sending the link to four or five people who surf.
