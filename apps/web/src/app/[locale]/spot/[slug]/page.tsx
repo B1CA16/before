@@ -122,8 +122,20 @@ export async function generateMetadata({
       description,
       url: canonical,
       locale: locale === "pt" ? "pt_PT" : "en_GB",
-      // Resolved against metadataBase, and generated per spot by opengraph-image.tsx next to this
-      // file, so a shared link shows the spot and its score rather than a bare favicon.
+      // Pointed at the path that actually serves, rather than letting Next derive it from the route
+      // folder. Because this route lives under `[locale]` and Portuguese is unprefixed, the derived
+      // URL was `/pt/...`, which the locale proxy answers with a 307 to `/...`. Measured on
+      // production: the pt cards redirected, the en cards did not. Facebook and X follow such a
+      // redirect, but WhatsApp's crawler is strict about it, and WhatsApp is how these links will
+      // actually get shared on this coast.
+      images: [
+        {
+          url: `/${locale}${path}/opengraph-image`,
+          width: 1200,
+          height: 630,
+          alt: t("spotTitle", { name: spot.name }),
+        },
+      ],
     },
     twitter: {
       card: "summary_large_image",

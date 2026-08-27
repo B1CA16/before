@@ -362,6 +362,23 @@ Inserting this milestone shifts the ML work back. Update section 11 of the spec:
 > Rendering it once would have settled it, which is the same mistake as the unaccented Portuguese in the
 > legal pages in Task 4.
 
+> **Found only by checking production, which is the point of checking production.** Every Portuguese
+> `og:image` URL was answered with a **307 redirect**, while the English ones returned 200 directly. The
+> cause: the image routes live under `app/[locale]/`, so their real URL always carries a locale segment,
+> and `localePrefix: "as-needed"` redirects the redundant `/pt/` away. Local testing had shown the same
+> thing on the spot cards and I had treated it as a local quirk.
+>
+> It matters more here than it would elsewhere. Facebook and X follow a redirect on an image; WhatsApp's
+> crawler is strict about it, and WhatsApp is how a link to a surf spot on this coast actually gets
+> shared.
+>
+> Fixed in `proxy.ts`, which now passes OG image routes straight through instead of negotiating a locale
+> for them, with every card pointing at the locale-prefixed path. The exclusion is done in the handler
+> rather than the matcher, because "any depth, ending in this segment" is exactly the path-to-regexp
+> pattern that already went wrong in this file once. Verified: all five cards are a direct 200 with zero
+> redirects, `/pt/spot/x` still redirects for *pages*, an unknown slug still 404s, and `html lang` is
+> still right per locale.
+>
 > **Two CI failures after committing Task 7, one of which was a real production fragility.**
 >
 > 1. **The web build required a live API.** `generateStaticParams` fetched the spot list and threw when

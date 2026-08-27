@@ -51,6 +51,20 @@ export async function generateMetadata({
       description: t("description"),
       url: locale === routing.defaultLocale ? "/" : `/${locale}`,
       locale: locale === "pt" ? "pt_PT" : "en_GB",
+      // Pointed at the path that actually serves, rather than letting Next derive it from the route
+      // folder. Because this route lives under `[locale]` and Portuguese is unprefixed, the derived
+      // URL was `/pt/...`, which the locale proxy answers with a 307 to `/...`. Measured on
+      // production: the pt cards redirected, the en cards did not. Facebook and X follow such a
+      // redirect, but WhatsApp's crawler is strict about it, and WhatsApp is how these links will
+      // actually get shared on this coast.
+      images: [
+        {
+          url: `/${locale}/opengraph-image`,
+          width: 1200,
+          height: 630,
+          alt: t("title"),
+        },
+      ],
     },
     twitter: {
       // summary_large_image, because the generated card is 1200x630 and a small square crop of a
