@@ -519,11 +519,26 @@ Inserting this milestone shifts the ML work back. Update section 11 of the spec:
 
 ### Task 10: docs and learnings
 
-- [ ] ADR for the tide decision: ingested and displayed, deliberately excluded from the heuristic.
-- [ ] ADR for the rendering change, and update ADR-0004 now that edge caching exists.
-- [ ] Spec: renumber the roadmap, and resolve the i18n deferred decision.
-- [ ] README: the new routes, locales and env vars.
-- [ ] Milestone learnings.
+- [x] **ADR-0007**: tide is ingested and displayed but kept out of the heuristic, because scoring it
+      needs per-spot bathymetry we do not have, and inventing a mid-tide rule would repeat exactly the
+      unjustified hand-tuning that produced the all-zeros collapse. Exposed to M9 as a model feature
+      instead, which is the difference between a formula we wrote and a model that learned.
+- [x] **ADR-0008**: server-rendered spot pages, and the measurement that reframed the problem (37,872
+      bytes, 29 visible words, zero spot names). Records the three defects prerendering surfaced, two of
+      which were pre-existing production bugs.
+- [x] ADR-0004 was already updated during Task 2; edge caching narrows the keep-warm ping's blast radius
+      without removing it, since the map and every authenticated call still hit the API directly.
+- [x] Spec: the roadmap renumbering was done when this milestone was inserted. Now also resolved the
+      **i18n deferred decision** (next-intl, pt default, `UI_LOCALE` replaced by `localeTag`), moved
+      experiment tracking from M8 to **M10** where it belongs now the ML work shifted, and recorded
+      ADR-0007 and ADR-0008.
+- [x] README: the two new environment variables, and a routes table covering the spot pages, legal
+      pages, sitemap, robots and the locale-prefixed Open Graph images.
+- [x] **Milestone learnings** at `docs/superpowers/plans/2026-08-31-milestone-8-learnings.md`. The
+      technical lessons are worth less than the process ones: a green build is not evidence a fix
+      worked (two of four attempts at the 502 passed while being wrong, one of them silently shipping
+      incomplete pages), and my own checks reported false results at least eight times, always by
+      measuring the wrong thing rather than by the app misbehaving.
 - [ ] **Commit:** `docs: record the M8 decisions and learnings`
 
 ---

@@ -210,7 +210,7 @@ A **pipeline**: each stage transforms and hands off.
 | Frontend | **Next.js / React** on Vercel | Best ecosystem + Vercel integration + portfolio signal. |
 | Map | **MapLibre / Leaflet + OSM tiles** | No paid API key. |
 | Scheduled ingestion | **GitHub Actions cron** | Daily Python job → Supabase. No server needed; versioned with code. |
-| Experiment tracking *(M8)* | MLflow (local) or W&B free | Introduced only when useful. |
+| Experiment tracking *(M10)* | MLflow (local) or W&B free | Introduced only when useful. |
 | Self-hosting | **No** | Managed free tiers only. |
 
 > **Honest caveat:** the only piece without a truly frictionless free "always-on" option is the
@@ -324,20 +324,29 @@ Milestones 0-6 deliver **v0** (a usable product with an honest heuristic brain);
   user session ratings only**, no expert annotation. 1-to-5 plus structured tags, collected rich and
   trained coarse; conditions joined at training time preferring `archive` over `forecast` (ADR-0006).
 - Exact API deploy host (Vercel functions vs HF Spaces vs Render) → **M5**.
-- Experiment-tracking tool (MLflow vs W&B) → **M8**.
+- Experiment-tracking tool (MLflow vs W&B) → **M10** (was M8, renumbered when the product
+  readiness milestone was inserted; there is nothing to track until a model exists).
 - Multi-sport module restructuring → when sport #2 is scheduled.
-- **Internationalisation (i18n)** → deferred, but planned. The interface is English only and dates
-  are formatted with a hard-coded `en-GB` locale (`UI_LOCALE` in `apps/web/src/lib/forecast.ts`),
-  chosen deliberately after the browser locale produced Portuguese day names inside an English UI.
-  Portuguese is the obvious first translation given the user base is the Portuguese coast. Doing it
-  properly means extracting UI strings, a locale-aware date and unit formatter (metres and seconds
-  are already metric, so units are fine), and a language switch. Revisit once the product is live.
+- ~~**Internationalisation (i18n)**~~ → **resolved at M8: `next-intl`, Portuguese as the default
+  locale, English prefixed.** 214 message keys per language with asserted parity. `UI_LOCALE` is gone,
+  replaced by `localeTag(locale)`: the hard-coded `en-GB` pin existed only to stop the *browser* locale
+  producing Portuguese day names inside an English interface, and a real locale switch is the proper
+  fix for that mismatch rather than the workaround.
+  `localePrefix: "as-needed"` was chosen for a concrete reason rather than taste: spot links had already
+  been shared, and always-prefixing would have turned every one of them into a redirect.
+  Score verdicts and wind labels now return *keys* rather than words, so the thresholds stay a product
+  decision in `lib/score.ts` while the wording lives in the catalogues, with a test asserting every key
+  either function can emit exists in both languages.
 
 ## Decisions made after initial approval (see ADRs)
 
 - Schema management: Supabase CLI + hand-written SQL migrations (ADR-0002).
 - Spot sourcing: automated from OSM/Wikidata, no reliance on expert annotation (ADR-0003).
 - Keeping the free-tier API warm with an external scheduler, not a GitHub Action (ADR-0004).
+- Tide is ingested and displayed but deliberately excluded from the heuristic score, and exposed to the
+  model instead (ADR-0007).
+- Server-rendered spot pages, because SEO here was a rendering problem rather than a metadata one
+  (ADR-0008).
 - Google sign-in instead of email, because no free mail provider will send without a sender
   domain (ADR-0005).
 - Label design: 1-to-5 ratings plus tags, trained as a binary collapse (ADR-0006).

@@ -52,6 +52,8 @@ lists what is needed.
 | `apps/web/.env.local` | `NEXT_PUBLIC_API_URL` | `http://127.0.0.1:8000` locally. |
 | `apps/web/.env.local` | `NEXT_PUBLIC_SUPABASE_URL` | |
 | `apps/web/.env.local` | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Safe in the browser: grants only what RLS allows. **Never** the service-role or `sb_secret_` key. |
+| Vercel | `NEXT_PUBLIC_SITE_URL` | The site's absolute origin. Not optional in production: canonical, hreflang and Open Graph image URLs are all ignored by crawlers when relative. Falls back to `VERCEL_PROJECT_PRODUCTION_URL`. |
+| Vercel | `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION` | Optional. Search Console ownership token. Only the meta-tag method works here, since a `*.vercel.app` subdomain cannot be verified by DNS. |
 
 There is deliberately **no JWT secret**. Supabase signs with ES256, so the API verifies against a
 published public key and holds nothing capable of minting a token.
@@ -78,6 +80,20 @@ score can produce exists in both, because a missing key renders as a raw identif
 
 Two things are deliberately not translated: spot names and region names, which are data from OSM rather
 than interface copy.
+
+### Routes
+
+| Route | What it is |
+| --- | --- |
+| `/` | The map. A client island, so it is not indexable and does not need to be. |
+| `/spot/<slug>` | A server-rendered report per spot, prerendered for all 92 in both languages and revalidated hourly. This is what search engines and shared links actually see (ADR-0008). |
+| `/privacy`, `/terms` | Legal pages, static in both languages. Content lives in `src/content/legal.ts` as typed data rather than in the message catalogue, because it is only rendered by two server routes and would otherwise ship to every browser. |
+| `/sitemap.xml` | 95 entries, each pairing its pt and en URLs as alternates. |
+| `/robots.txt` | Allows production, disallows preview deployments entirely. |
+| `/<locale>/opengraph-image` | Generated per spot and for the home page. Locale-prefixed on purpose: the locale proxy passes these through without redirecting, because WhatsApp's crawler will not follow a redirect on an image. |
+
+195 pages are prerendered at build time. If the API is unreachable during a build, the spot pages are
+skipped with a loud warning and render on demand instead, rather than failing the deploy.
 
 ### Are there enough labels to train on?
 
