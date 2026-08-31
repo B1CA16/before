@@ -4,6 +4,8 @@ import { hasLocale, NextIntlClientProvider } from "next-intl";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
 
+import { Analytics } from "@vercel/analytics/next";
+
 import { AuthProvider } from "@/components/AuthProvider";
 import { FavouritesProvider } from "@/components/FavouritesProvider";
 import { MarkFxProvider } from "@/components/MarkFx";
@@ -127,6 +129,13 @@ export default async function LocaleLayout({
             </FavouritesProvider>
           </AuthProvider>
         </NextIntlClientProvider>
+        {/* Vercel Web Analytics. Cookieless, so no consent banner is required and none is shown.
+            It is here for exactly one number: the ratio of visitors to logged sessions. That is what
+            distinguishes "nobody opened the link" from "they opened it and could not work out how to
+            log a session", and those need completely different fixes.
+            Served from this origin rather than a third-party host, so there is no CSP to fight and
+            no extra DNS lookup. */}
+        <Analytics />
       </body>
     </html>
   );

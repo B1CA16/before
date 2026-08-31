@@ -9,6 +9,7 @@ import AuthMenu from "@/components/AuthMenu";
 import LanguageSwitch from "@/components/LanguageSwitch";
 import Chip from "@/components/Chip";
 import { useFavourites } from "@/components/FavouritesProvider";
+import FirstRunCard from "@/components/FirstRunCard";
 import MarkCounter from "@/components/MarkCounter";
 import Footer from "@/components/Footer";
 import LogSessionSheet from "@/components/LogSessionSheet";
@@ -44,11 +45,13 @@ function TopBar({
   onQuery,
   loading,
   onShowSessions,
+  onLogSession,
 }: {
   query: string;
   onQuery: (v: string) => void;
   loading: boolean;
   onShowSessions: () => void;
+  onLogSession: () => void;
 }) {
   const t = useTranslations("nav");
   return (
@@ -80,6 +83,13 @@ function TopBar({
           />
           {t('updated')}
         </span>
+        {/* Permanent, and that is the point of it. Logging a session used to live only inside the
+            spot panel, which you reach by picking a spot and scrolling: buried, for the one action
+            the whole project depends on. The intro card explains it once; this keeps it reachable
+            forever after the card is dismissed. */}
+        <button className="btn btn-primary hidden h-[2.125rem] min-h-0 sm:inline-flex" onClick={onLogSession}>
+          {t("logCta")}
+        </button>
         <MarkCounter />
         <LanguageSwitch />
         <AuthMenu onShowSessions={onShowSessions} />
@@ -191,12 +201,14 @@ function HomeInner() {
         onQuery={setQuery}
         loading={spots.length === 0 && !failed}
         onShowSessions={() => setSessionsOpen(true)}
+        onLogSession={() => setLogging(true)}
       />
 
       <div className="grid min-h-0 md:grid-cols-[19rem_1fr]">
         {/* Rail: a verdict card, then one card per spot. Same shapes as the detail panel. */}
         <aside className="hidden min-h-0 flex-col border-r border-hairline bg-app md:flex">
-          <div className="p-3">
+          <div className="flex flex-col gap-3 p-3">
+            <FirstRunCard onLogSession={() => setLogging(true)} />
             <div className="panel p-4">
               <h2 className="section-title">{t("rightNow")}</h2>
               {failed ? (

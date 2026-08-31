@@ -66,6 +66,14 @@
     "unreachable": "Cannot reach the forecast service.",
     "worthGoing": "It is worth going."
   },
+  "intro": {
+    "cta": "Log a session",
+    "dismiss": "Dismiss",
+    "step1": "Every spot gets a score out of 10, worked out from open swell, wind and tide forecasts.",
+    "step2": "After you surf, log the session and say how it actually was.",
+    "step3": "Those ratings are what train the model. Without them the score is only a formula.",
+    "title": "How it works"
+  },
   "legal": {
     "crumbHome": "Home",
     "crumbNav": "Breadcrumb",
@@ -129,14 +137,15 @@
     "notFound": "Spot not found"
   },
   "nav": {
-    "search": "Search a spot",
-    "region": "Lisbon coast",
-    "updated": "Updated 06:00",
-    "language": "Language",
-    "openMap": "Open the map",
     "home": "BeFORE home",
+    "language": "Language",
     "languageName": "English",
-    "noMatch": "No spot matches that name."
+    "logCta": "+ Session",
+    "noMatch": "No spot matches that name.",
+    "openMap": "Open the map",
+    "region": "Lisbon coast",
+    "search": "Search a spot",
+    "updated": "Updated 06:00"
   },
   "regions": {
     "Lisbon": "Lisbon"

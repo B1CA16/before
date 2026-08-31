@@ -296,6 +296,61 @@ body {
     opacity: 0.32;
   }
 
+  /* The first-run explanation. Tinted toward the accent so it reads as guidance rather than as
+     another data card, and clearly temporary. */
+  .intro-card {
+    background: linear-gradient(180deg, #f3f0ff, var(--color-panel));
+    border: 1px solid #ddd4ff;
+    border-radius: var(--radius-panel);
+    padding: 1rem;
+  }
+  .intro-x {
+    margin-left: auto;
+    display: grid;
+    place-items: center;
+    height: 1.5rem;
+    width: 1.5rem;
+    flex: none;
+    border-radius: 999px;
+    color: var(--color-faint);
+    cursor: pointer;
+    transition: color 0.15s ease, background-color 0.15s ease;
+  }
+  .intro-x:hover {
+    color: var(--color-secondary);
+    background: var(--color-inset);
+  }
+  .intro-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-top: 0.7rem;
+  }
+  .intro-steps li {
+    display: flex;
+    gap: 0.5rem;
+    align-items: flex-start;
+    font-size: var(--text-meta);
+    color: var(--color-secondary);
+    line-height: 1.45;
+  }
+  /* Numbered, because the three points are a sequence: what the number is, what you do, why it
+     matters. Bullets would flatten that into three unrelated facts. */
+  .intro-n {
+    display: grid;
+    place-items: center;
+    flex: none;
+    height: 1.05rem;
+    width: 1.05rem;
+    margin-top: 0.1rem;
+    border-radius: 999px;
+    background: var(--color-accent);
+    color: #fff;
+    font-size: 0.5625rem;
+    font-weight: 800;
+    line-height: 1;
+  }
+
   /* A segmented control: two ways to order the same list. Small, quiet, and the selected one is
      filled rather than merely tinted, so which is active survives a glance. */
   .seg {

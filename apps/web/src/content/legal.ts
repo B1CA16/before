@@ -54,7 +54,7 @@ export const CONTROLLER = "Francisco Ferreira";
  * Last substantive change, ISO so it can be formatted per locale. Update this whenever the meaning
  * changes, not when wording is tidied.
  */
-export const LEGAL_UPDATED = "2026-08-25";
+export const LEGAL_UPDATED = "2026-08-31";
 
 export type LegalKey = "privacy" | "terms";
 
@@ -135,7 +135,7 @@ export const LEGAL: Record<LegalKey, Record<Locale, LegalDoc>> = {
               list: [
                 "Your data is never sold, rented or shared for anyone's marketing.",
                 "There is no advertising on BeFORE and no ad network embedded in it.",
-                "There are no analytics or tracking cookies at the time of writing. If that changes, this page changes before it does.",
+                "There is no tracking cookie. Visits are counted with Vercel Web Analytics, which sets no cookie and builds no profile: it records that a page was viewed, roughly where from and on what kind of device, and nothing that identifies you or links one visit to the next.",
                 "Nothing about you is profiled, and no automated decision is made about you.",
                 "Your logged sessions are never shown to other users as yours.",
               ],
@@ -150,7 +150,9 @@ export const LEGAL: Record<LegalKey, Record<Locale, LegalDoc>> = {
               p:
                 "When you sign in, the app stores your login in your browser's local storage so that " +
                 "you stay signed in between visits. It is not a cookie and it is not used to follow " +
-                "you anywhere. Signing out removes it, and so does clearing your browser data.",
+                "you anywhere. Signing out removes it, and so does clearing your browser data. The " +
+                "same storage also remembers that you closed the short introduction, so it is not " +
+                "shown to you again. That is a single yes-or-no flag and nothing more.",
             },
             {
               p:
@@ -177,7 +179,11 @@ export const LEGAL: Record<LegalKey, Record<Locale, LegalDoc>> = {
                 rows: [
                   ["Supabase", "The database and the sign-in system", "Ireland (EU)"],
                   ["Render", "The API that calculates and serves the scores", "Frankfurt (EU)"],
-                  ["Vercel", "Hosting and delivering the website itself", "Global edge network"],
+                  [
+                    "Vercel",
+                    "Hosting and delivering the website itself, and counting visits without cookies",
+                    "Global edge network",
+                  ],
                   [
                     "Google",
                     "The sign-in itself. Google decides for itself what it records about your use of your Google account",
@@ -377,7 +383,7 @@ export const LEGAL: Record<LegalKey, Record<Locale, LegalDoc>> = {
               list: [
                 "Os seus dados nunca são vendidos, alugados ou partilhados para marketing de quem quer que seja.",
                 "Não há publicidade no BeFORE nem qualquer rede de anúncios incorporada.",
-                "Não existem cookies de análise ou de rastreio à data desta versão. Se isso mudar, esta página muda primeiro.",
+                "Não há cookie de rastreio. As visitas são contadas com o Vercel Web Analytics, que não coloca cookies nem constrói perfis: regista que uma página foi vista, mais ou menos de onde e em que tipo de dispositivo, e nada que te identifique ou que ligue uma visita à seguinte.",
                 "Não é feita qualquer definição de perfis nem qualquer decisão automatizada sobre si.",
                 "As sessões que regista nunca são mostradas a outros utilizadores como sendo suas.",
               ],
@@ -393,7 +399,9 @@ export const LEGAL: Record<LegalKey, Record<Locale, LegalDoc>> = {
                 "Quando entra na conta, a aplicação guarda a sua sessão de login no " +
                 "armazenamento local do navegador, para que continue autenticado entre visitas. " +
                 "Não é um cookie e não serve para o seguir seja onde for. Sair da " +
-                "conta remove-a, tal como limpar os dados do navegador.",
+                "conta remove-a, tal como limpar os dados do navegador. O mesmo armazenamento " +
+                "guarda também que fechou a breve introdução, para não lhe voltar a ser mostrada. " +
+                "É apenas uma marca de sim ou não, e mais nada.",
             },
             {
               p:
@@ -426,7 +434,11 @@ export const LEGAL: Record<LegalKey, Record<Locale, LegalDoc>> = {
                     "Irlanda (UE)",
                   ],
                   ["Render", "A API que calcula e serve as pontuações", "Frankfurt (UE)"],
-                  ["Vercel", "Alojamento e entrega do próprio site", "Rede global"],
+                  [
+                    "Vercel",
+                    "Alojamento e entrega do próprio site, e contagem de visitas sem cookies",
+                    "Rede global",
+                  ],
                   [
                     "Google",
                     "A autenticação em si. A Google decide por si própria o que regista sobre o uso da sua conta Google",

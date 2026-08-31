@@ -66,6 +66,14 @@
     "unreachable": "Não foi possível contactar o serviço de previsão.",
     "worthGoing": "Vale a pena ir."
   },
+  "intro": {
+    "cta": "Registar uma sessão",
+    "dismiss": "Dispensar",
+    "step1": "Cada spot tem uma nota de 0 a 10, calculada de previsões abertas de ondulação, vento e maré.",
+    "step2": "Depois de surfares, regista a sessão e diz como estava mesmo.",
+    "step3": "São essas avaliações que treinam o modelo. Sem elas, a nota é só uma fórmula.",
+    "title": "Como funciona"
+  },
   "legal": {
     "crumbHome": "Início",
     "crumbNav": "Caminho de navegação",
@@ -129,14 +137,15 @@
     "notFound": "Spot não encontrado"
   },
   "nav": {
-    "search": "Procurar um spot",
-    "region": "Costa de Lisboa",
-    "updated": "Atualizado às 06:00",
-    "language": "Idioma",
-    "openMap": "Abrir o mapa",
     "home": "Início BeFORE",
+    "language": "Idioma",
     "languageName": "Português",
-    "noMatch": "Nenhum spot corresponde a esse nome."
+    "logCta": "+ Sessão",
+    "noMatch": "Nenhum spot corresponde a esse nome.",
+    "openMap": "Abrir o mapa",
+    "region": "Costa de Lisboa",
+    "search": "Procurar um spot",
+    "updated": "Atualizado às 06:00"
   },
   "regions": {
     "Lisbon": "Lisboa"

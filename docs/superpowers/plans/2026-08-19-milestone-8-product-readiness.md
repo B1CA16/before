@@ -439,16 +439,32 @@ Inserting this milestone shifts the ML work back. Update section 11 of the spec:
 
 ### Task 8: first-run explanation and analytics
 
-- [ ] A visitor currently sees a number with no idea what it means or that they can contribute. A short
-      dismissible explanation: what the score is, that it is computed from open forecast data, and that
-      rating sessions is what improves it.
-- [ ] Make session logging visible rather than buried in a panel. If labels are the goal, the invitation
-      should be somewhere a first-time visitor sees it.
-- [ ] Vercel Web Analytics, and one thing worth measuring above all: the ratio of visitors to logged
-      sessions. That number decides whether the recruitment ask or the acquisition path is working.
-- [ ] **Required by Task 4:** the privacy policy currently states there are no analytics. Update
-      section 4 of `src/content/legal.ts` in both languages and bump `LEGAL_UPDATED`, in the same
-      commit that adds the script.
+- [x] `FirstRunCard`: three numbered steps at the top of the rail. What the score is, that you log a
+      session after surfing, and that those ratings are what train the model. Numbered rather than
+      bulleted because it is a sequence, not three unrelated facts. Dismissible and remembered, since
+      an explanation you cannot turn off stops being an explanation and becomes furniture.
+- [x] **Logging is no longer buried.** It previously existed only inside the spot panel, reachable by
+      picking a spot and scrolling: the one action the whole project depends on, hidden two
+      interactions deep. Now a permanent `+ Sessao` button in the top bar, plus the card's own CTA.
+      The card is temporary; the invitation is not.
+- [x] `useSyncExternalStore` rather than reading localStorage in an effect. The server cannot see
+      localStorage, so the server snapshot reports "dismissed" and the card renders nothing during
+      SSR, then appears on hydration. That avoids both a hydration mismatch and the flash of an
+      explanation being ripped away from someone who closed it months ago. The effect-plus-setState
+      version works but is a cascading render React now warns about, and it was the third time in this
+      milestone I reached for that pattern before being told off for it.
+- [x] Vercel Web Analytics, cookieless, mounted in the layout. One number justifies it: **visitors to
+      logged sessions**. That is what distinguishes "nobody opened the link" from "they opened it and
+      could not work out how to log", and those need completely different fixes.
+- [x] **Privacy policy updated in the same commit, as Task 4 required.** The "no analytics" bullet is
+      replaced with what is actually true in both languages, Vercel's row in the recipients table now
+      says it also counts visits, and `LEGAL_UPDATED` moved to 2026-08-31. The device section also
+      gained a sentence about the intro dismissal flag, because that section claims to be complete and
+      a new localStorage key would otherwise have quietly falsified it.
+- [x] Verified in a browser: card shows on a first visit, its CTA opens the log sheet, dismissing hides
+      it, it stays hidden across a reload, a fresh browser profile sees it again, and the top-bar
+      button survives dismissal. The only console 404 is `/_vercel/insights/script.js`, which exists
+      only on Vercel's own infrastructure.
 - [ ] **Commit:** `feat: add first-run explanation and analytics`
 
 ### Task 9: keyboard access for the controls I hand-built
