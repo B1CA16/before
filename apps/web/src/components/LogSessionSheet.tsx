@@ -4,6 +4,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 
 import { useAuth } from "@/components/AuthProvider";
+import { useFocusTrap } from "@/lib/useFocusTrap";
 import AnchoredPanel from "@/components/AnchoredPanel";
 import DayPicker from "@/components/DayPicker";
 import GoogleSignIn from "@/components/GoogleSignIn";
@@ -95,6 +96,9 @@ export default function LogSessionSheet({
   onLogged?: () => void;
 }) {
   const t = useTranslations("log");
+  // Focus in, Tab trapped, Escape closes, focus restored. The dialog already claimed aria-modal;
+  // this is what makes that claim true.
+  const dialogRef = useFocusTrap<HTMLDivElement>(onClose);
   const tTags = useTranslations("tags");
   const tAuth = useTranslations("auth");
   const tSpot = useTranslations("spot");
@@ -210,6 +214,7 @@ export default function LogSessionSheet({
       />
 
       <div
+        ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-label={t("title")}

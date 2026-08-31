@@ -107,6 +107,10 @@ export default function AnchoredPanel({
   return createPortal(
     <div
       ref={setPanelEl}
+      // Marks this subtree as belonging to whatever opened it, even though the portal puts it outside
+      // that element in the DOM. A dialog focus trap uses this to know that focus landing in here has
+      // not escaped the dialog, and so must not be dragged back.
+      data-portal-panel=""
       className="fixed z-[1400]"
       style={{
         left: pos.left,

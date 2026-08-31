@@ -469,13 +469,53 @@ Inserting this milestone shifts the ML work back. Update section 11 of the spec:
 
 ### Task 9: keyboard access for the controls I hand-built
 
-- [ ] A regression I introduced in M7: the custom `Select` and `DayPicker` replaced native elements that
-      were keyboard-navigable, and they are click-only. Arrow keys, Home and End, Enter and Escape,
-      type-ahead on the select, and arrow keys across the calendar grid.
-- [ ] Focus management: focus moves into an opened panel and returns to the trigger on close, and the
-      sheets trap focus while open.
-- [ ] Verify by driving it with the keyboard alone, no mouse, through the whole log-a-session flow.
+- [x] Regression confirmed before fixing: **zero `onKeyDown` handlers** in either component. Both were
+      click-only. Replacing a native control means inheriting the work the browser was doing for free,
+      and `<select>` alone gives arrows, Home, End, type-ahead, Enter, Escape and focus return.
+- [x] `Select`: arrows, Home, End, PageUp, PageDown, Enter, Escape, Tab-to-commit-nothing, and
+      type-ahead with a one-second buffer for the 92-spot list. Uses `aria-activedescendant` rather
+      than roving focus, because focus has to stay in the filter input while the arrows move through
+      results; moving real focus into the list would take it out of the input on the first press.
+- [x] The active option is a separate visual state from the selected one. "Where the keyboard is" and
+      "what is chosen" are different facts and a keyboard user needs both at once.
+- [x] `DayPicker`: arrows by day and week, Home and End to the ends of the week, PageUp and PageDown by
+      month, Enter to pick. Rolls into the adjacent month at the edges, like a spreadsheet. **Roving
+      tabindex**, because 42 focusable buttons would mean 42 Tab presses to cross a calendar, which is
+      technically operable and practically unusable.
+- [x] `useFocusTrap`, used by both sheets. They already declared `role="dialog"` and `aria-modal="true"`
+      while enforcing neither, so Tab walked straight out into the map behind: a screen reader would
+      read content the dialog claims is hidden. Declaring modal behaviour without implementing it is
+      worse than not declaring it. Focus goes in on open, wraps at both ends, Escape closes, and focus
+      is returned to the trigger.
+- [x] Verified keyboard-only through the whole flow: Tab to the log button, Enter to open, focus lands
+      inside, 25 tabs cannot escape, arrow to a spot and Enter to choose it (Crazy Left to Nova Praia),
+      focus returns to the trigger, Escape closes and focus returns to the button that opened it.
+      Calendar: focus moves in on open, left moves one day (31 to 30), up moves one week (30 to 23),
+      down and right return to the start, PageUp keeps exactly one tabbable cell, Enter selects and
+      closes.
 - [ ] **Commit:** `fix: make the custom select and calendar keyboard accessible`
+
+> **Two bugs the keyboard pass found that clicking never would.**
+>
+> 1. **The calendar was unreachable by Tab.** It renders through a portal into `document.body`, so in
+>    DOM order it sits outside the sheet entirely: pressing Tab from the date button jumped to the hour
+>    select, leaving a visible calendar that no keyboard could touch. Fixed by having the grid take
+>    focus when it opens, which is what a popup owes its keyboard users.
+> 2. **The focus trap fought the portals.** The same portalling meant the select list and the calendar
+>    are outside the dialog's DOM subtree, so the trap treated focus landing in them as having escaped
+>    and dragged it back. `AnchoredPanel` now marks its subtree `data-portal-panel`, and the trap
+>    leaves focus alone when it is inside one.
+>
+> Also fixed on the way: `aria-activedescendant` was sitting on a plain button, where it means nothing.
+> The trigger is now `role="combobox"`, and when the filter box exists the attribute moves to the input,
+> because only one element should claim to own the selection and it has to be the one holding focus.
+
+> **My own checks reported two failures that were the checks' fault**, both the same shape: measuring
+> after an action that invalidated the thing being measured. The select test ran signed out, so the
+> sheet showed the sign-in prompt and the selects never mounted. The calendar test pressed Tab before
+> measuring focus, which moved focus off the cursor cell the grid had just focused. A third edit
+> silently did nothing because a heredoc mangled the anchor string and I had not asserted on the
+> replacement.
 
 ### Task 10: docs and learnings
 

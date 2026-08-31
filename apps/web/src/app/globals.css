@@ -296,6 +296,17 @@ body {
     opacity: 0.32;
   }
 
+  /* The keyboard-active row in a select, and the keyboard cursor in the calendar.
+     Both are distinct from :hover and from the selected state: "where the keyboard is" and "what is
+     chosen" are different facts, and a keyboard user needs to see both at once. */
+  .option.is-active {
+    background: var(--color-inset);
+  }
+  .day.is-cursor:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 1px;
+  }
+
   /* The first-run explanation. Tinted toward the accent so it reads as guidance rather than as
      another data card, and clearly temporary. */
   .intro-card {

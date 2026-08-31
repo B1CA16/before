@@ -4,6 +4,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 
 import { useAuth } from "@/components/AuthProvider";
+import { useFocusTrap } from "@/lib/useFocusTrap";
 import {
   deleteAccount,
   deleteSession,
@@ -44,6 +45,9 @@ export default function SessionsSheet({
   onEdit: (session: SessionRow) => void;
 }) {
   const t = useTranslations("sessions");
+  // Focus in, Tab trapped, Escape closes, focus restored. The dialog already claimed aria-modal;
+  // this is what makes that claim true.
+  const dialogRef = useFocusTrap<HTMLDivElement>(onClose);
   const tAuth = useTranslations("auth");
   const tTags = useTranslations("tags");
   const tag = localeTag(useLocale());
@@ -125,6 +129,7 @@ export default function SessionsSheet({
       />
 
       <div
+        ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-label={t("title")}
