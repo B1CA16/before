@@ -311,20 +311,29 @@ not guaranteed to be the same hour for every spot.
 
 ### Task 5: ADR and learnings
 
-- [ ] **ADR-0009**: why the label source changed, what the model actually learns (forecast versus
-      reanalysis, not versus reality), the baseline it had to beat, and the seasonal limitation.
-- [ ] Update the spec: the roadmap, and the fact that the session-rating model is now deferred rather
-      than next.
-- [ ] `label_report.py` keeps its bar unchanged. The session model is still the goal; this milestone does
-      not lower it, it works around the blockage.
-- [ ] **Commit:** `docs: record the forecast-correction decisions`
+- [x] **ADR-0009**: why the label source changed, what the model actually learns (forecast versus
+      reanalysis, not versus reality), the baseline it had to beat, the seasonal limitation, and why a
+      table ships instead of the model that beat it.
+- [x] Update the spec: M9 re-scoped, M9b added for the session model, deferred on labels alone.
+- [x] `label_report.py` keeps its bar unchanged, verified: no diff to `ml/src/before_surf/labels.py`
+      in this milestone. Still 80 labels, minority class at least 25%.
+- [x] Learnings written up: `2026-09-01-milestone-9-learnings.md`.
+- [x] Incidental: ADRs 0007 and 0008 were never added to `docs/adr/README.md` in M8. Fixed here.
+- [x] **Commit:** `docs: record the forecast-correction decisions`
 
-## Definition of done
+## Definition of done, and whether it was met
 
-- A number: the model's MAE on held-out weeks, next to all four baselines, with the winner stated plainly
-  even if the winner is a baseline.
-- If shipped: the score reflects a corrected wind, and the app says so.
-- An ADR that a stranger could read to understand what the model does and does not know.
+- **A number, with the winner stated plainly.** Held-out MAE: gradient boosting + spot 2.203, per hour
+  2.333, global median 2.390, global mean 2.427, per spot 2.623, do nothing 2.945. The model won on
+  MAE. ✅
+- **The score reflects a corrected wind, and the app says so.** Shipped, with the adjustment named in
+  "Why this score". ✅
+- **An ADR a stranger could read.** ADR-0009. ✅
+
+The one thing the plan did not anticipate: the winner on MAE is not what shipped, because the product
+measurement (0.6 percentage points of band words, against +75 MB RSS on a 512 MB instance) pointed the
+other way. The plan allowed for a baseline beating the model; this is the stranger case where the model
+wins the metric and still does not earn production.
 
 ## Deferred, still
 

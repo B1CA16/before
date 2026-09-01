@@ -280,7 +280,8 @@ Milestones 0-6 deliver **v0** (a usable product with an honest heuristic brain);
 | | **── v0 shipped (usable product) ──** | | |
 | **7** | Session logging + labels: auth, sessions table, ratings (closes the label loop) | Auth, data modeling, GDPR | 🟡 Medium |
 | **8** | Product readiness: Portuguese, server-rendered spot pages, tide, favourites, legal pages, SEO | Rendering strategy, i18n, GDPR, SEO as engineering | 🟡 Medium |
-| **9** | First ML model (v1): build training set from labels, train `MLScorer`, beat the heuristic | Supervised training, train/val/test, CV, model selection | 🔴 Hard |
+| **9** | ~~First ML model from labels~~ → **forecast correction**: 75,072 paired forecast/archive rows, temporal split with embargo, baselines, gradient boosting, per-hour table shipped | Temporal splits, baselines, effective sample size, when a model does *not* earn its place | 🔴 Hard |
+| **9b** | First ML model from labels (`MLScorer`), **deferred until labels exist** | Supervised training, CV, model selection | 🔴 Hard |
 | **10** | Tuning + XAI + MLOps: hyperparameter tuning, SHAP, experiment tracking, versioning, CI | Tuning, Explainable AI, MLOps | 🔴 Hard |
 | | **── v1 shipped. v2 (personalization) = future ──** | | |
 
@@ -294,6 +295,12 @@ Milestones 0-6 deliver **v0** (a usable product with an honest heuristic brain);
 > milestone was inserted as M8 to make it usable, translated and findable, pushing the ML model to M9
 > and tuning to M10. The heuristic keeps serving the product in the meantime, which is exactly the
 > maturity ladder working as designed rather than a delay.
+>
+> **M9 re-scoped 2026-08-31:** M8 shipped and the label report still said 0, because the labels need
+> recruited Lisbon surfers and the owner neither surfs nor lives there. Rather than fabricate labels or
+> stall, M9 became **forecast correction**, a supervised problem whose 75,072 labels were already sitting
+> in the database. The session-rating model is deferred to M9b, unblocked only by labels. See ADR-0009.
+> The label bar is unchanged: 80 labels, minority class at least 25%.
 
 > **Most important lesson:** milestones 0-6 contain almost no "AI." Real ML is ~80% data
 > engineering, EDA, and evaluation plumbing; the model is the small exciting bit at the end that

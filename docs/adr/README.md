@@ -9,3 +9,6 @@ ADRs are immutable once accepted; a later ADR supersedes an earlier one rather t
 - [0004](0004-keeping-the-free-tier-api-warm.md) Keeping the free-tier API warm with an external scheduler
 - [0005](0005-google-sign-in-instead-of-email.md) Google sign-in instead of email, for want of a sender domain
 - [0006](0006-label-design.md) Label design: 1-to-5 ratings plus tags, trained as a binary collapse
+- [0007](0007-tide-ingested-not-scored.md) Tide ingested and shown, but kept out of the score
+- [0008](0008-server-rendered-spot-pages.md) Server-rendered spot pages, and why SEO was a rendering problem
+- [0009](0009-forecast-correction-instead-of-session-labels.md) Forecast correction instead of session labels, and a table instead of the model
