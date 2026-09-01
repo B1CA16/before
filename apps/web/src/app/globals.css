@@ -20,10 +20,19 @@
   --color-hairline: #e5e8ed; /* default border */
   --color-edge: #d3d8e0; /* border on raised or focused things */
 
-  /* --- text. Three steps: read it, scan it, ignore it. Primary is the logo's own navy. --- */
+  /* --- text. Three steps: read it, scan it, ignore it. Primary is the logo's own navy.
+     Contrast against the three surfaces this text sits on (app, panel, inset), worst case first:
+     primary 16.1:1, secondary 6.8:1, faint 4.8:1. WCAG AA wants 4.5:1 for text below 24px, and
+     essentially all of ours is 10 to 12px, so 4.5 is the floor for every step here.
+
+     Faint was #98a2b3 until an audit measured it at 2.34:1 on the inset surface. That is not a
+     quiet grey, it is an unreadable one, and it was used on 224 elements across the site. The
+     replacement keeps a little headroom above 4.5 on purpose: at the bare minimum that passes,
+     darkening any background later would push the whole site back under without a single visible
+     symptom. "Ignore it" has to mean low priority, not illegible. --- */
   --color-primary: #101828;
   --color-secondary: #4a5567;
-  --color-faint: #98a2b3;
+  --color-faint: #626c80;
 
   /* --- accent: the brand violet, which is drawn for light backgrounds --- */
   --color-accent: #5227e5;
