@@ -226,7 +226,8 @@
     "viewFull": "Relatório completo",
     "weakest": "<b>{factor}</b> é o que está a limitar. A pontuação só sobe quando todos os fatores sobem.",
     "whyThisScore": "Porque esta pontuação",
-    "wind": "Vento"
+    "wind": "Vento",
+    "windAdjusted": "Vento ajustado em {delta} km/h face à previsão publicada, com base no erro habitual a esta hora."
   },
   "tags": {
     "good_shape": "Boa forma",

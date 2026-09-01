@@ -240,13 +240,74 @@ is not.
 
 ### Task 4: into the serving path, or not
 
-- [ ] If the model wins: persist the artefact, load it in the API, and apply the correction to
-      `wind_speed_kmh` before scoring. The correction must be **visible**, not silent: the spot page
-      should be able to say the wind was adjusted.
-- [ ] The scorer must keep working when the artefact is missing, degrading to the raw forecast. Same
-      discipline as the rest of the app: a missing model is a degraded feature, not an outage.
-- [ ] Tests: a known input produces a known corrected output; an absent artefact falls back cleanly.
-- [ ] **Commit:** `feat: apply the wind correction when scoring`
+**Decision: ship the per-hour table, not the model.** Taken by the project owner against the
+measurements below, and recorded in ADR-0009.
+
+The question Task 3 could not answer is whether 0.13 km/h of MAE is worth anything to a person. It
+is not an ML question, so it needed a different measurement: score every held-out spot-hour three
+ways and compare against the score the archive wind implies. The app shows one decimal, with a
+colour band at 3, 5 and 7.
+
+| Version | mean score error | band word wrong |
+| --- | --- | --- |
+| raw forecast | 0.129 | 7.6% |
+| per-hour table | 0.099 | 6.1% |
+| gradient boosting | 0.094 | 5.5% |
+
+Correcting at all is clearly worth it: it flips 487 bands toward truth against 215 away. The model
+buys **0.6 further percentage points**, and costs scikit-learn plus scipy in the API's runtime
+dependencies: **+75 MB RSS** on a 512 MB Render instance, measured, not guessed. The table is 24
+numbers that can be printed in a UI string. The model's remaining edge is also smaller than the
+fold-to-fold instability Task 3 documented, where the most recent fold could not distinguish them.
+
+- [x] Persist the artefact and load it in the API; apply the correction to `wind_speed_kmh` before
+      scoring, and report it in every endpoint as `wind_correction_kmh`.
+- [x] The correction is **visible**: `ScoreBreakdown` says "wind adjusted by +3.2 km/h against the
+      published forecast", so a surfer comparing BeFORE against another forecast learns why they
+      differ rather than concluding one is broken.
+- [x] Degrades to the raw forecast when the artefact is absent, with tests per endpoint.
+- [x] Tests both sides, and seven mutations of the serving path, all caught.
+- [x] **Commit:** `feat: apply the wind correction when scoring`
+
+Four decisions worth more than the code.
+
+**Keyed by local hour, not UTC.** The bias is diurnal, which is a fact about the sun. All 34 days of
+training data are summer, so the two agree up to a constant +1 and the distinction is invisible
+today. It stops being invisible when the clocks go back, at which point a UTC table would apply the
+04:00 correction at 03:00 all winter: silent, seasonal, and very hard to find. Designed out rather
+than noted.
+
+**Archive rows are never corrected.** The correction *is* the gap between forecast and ERA5, so
+applying it to an archive row adds that gap to the thing it was measured against. `/conditions-at`
+prefers archive rows, so this was live, not hypothetical. Live testing then caught a second-order
+version of the same mistake: those rows were reporting a correction of `0.0`, which claims "we
+looked and decided nothing was needed" when the truth is "this is not the kind of thing we correct".
+They now report null.
+
+**The shipped table is fitted on all 75,072 rows, the quoted score is the held-out one.** The split
+existed to produce an honest estimate; having got it, withholding a quarter of the evidence from the
+shipped coefficients would be superstition. The two fits are separate and the metadata records the
+held-out number, so the artefact cannot quietly quote a score it was allowed to see the answers for.
+
+**The builder refuses to write a table that loses to doing nothing.** This script runs again every
+time the data grows. Without the gate, the day eventually comes when it silently ships a correction
+that makes the forecast worse.
+
+The shipped table, +km/h added to the forecast wind by local hour:
+
+| 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 | 10 | 11 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| +4.40 | +4.15 | +4.05 | +4.20 | +3.50 | +3.50 | +3.30 | +3.60 | +3.80 | +1.70 | +1.10 | +1.50 |
+
+| 12 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20 | 21 | 22 | 23 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| +1.50 | +1.10 | +0.80 | +0.20 | +0.40 | +0.50 | +0.80 | +1.10 | +2.00 | +3.20 | +3.80 | +4.10 |
+
+Held out: MAE 2.333 against 2.945 for doing nothing, an improvement of 0.613 km/h.
+
+One incidental change: `/scores` now returns `observed_at`. It had to, since the correction needs to
+know which hour it is correcting, and the endpoint picks the nearest future hour per spot, which is
+not guaranteed to be the same hour for every spot.
 
 ### Task 5: ADR and learnings
 

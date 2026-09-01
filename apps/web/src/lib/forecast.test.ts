@@ -17,6 +17,7 @@ function hour(observed_at: string, score: number | null): ForecastHour {
     swell_height_m: null,
     swell_period_s: null,
     wind_speed_kmh: null,
+    wind_correction_kmh: null,
   };
 }
 

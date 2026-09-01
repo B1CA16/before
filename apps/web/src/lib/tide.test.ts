@@ -13,8 +13,8 @@ import { nextTideTurn, tideLabel } from "./forecast";
  */
 function curve(): ForecastHour[] {
   const heights = [
-    -1.2, -1.09, -0.8, -0.41, -0.03, 0.27, 0.4, 0.33, 0.09, -0.28, -0.66, -0.96, -1.09,
-    -1.02, -0.78, -0.4, 0.0, 0.3,
+    -1.2, -1.09, -0.8, -0.41, -0.03, 0.27, 0.4, 0.33, 0.09, -0.28, -0.66, -0.96,
+    -1.09, -1.02, -0.78, -0.4, 0.0, 0.3,
   ];
   return heights.map((h, i) => ({
     observed_at: `2026-08-20T${String(i).padStart(2, "0")}:00:00Z`,
@@ -30,6 +30,7 @@ function curve(): ForecastHour[] {
     swell_height_m: null,
     swell_period_s: null,
     wind_speed_kmh: null,
+    wind_correction_kmh: null,
   }));
 }
 
@@ -59,7 +60,9 @@ describe("nextTideTurn", () => {
 
   it("does not treat a null as falling", () => {
     // A null followed by false must not read as a high-water turn.
-    const hours = curve().slice(0, 3).map((h, i) => ({ ...h, tide_rising: i === 0 ? null : false }));
+    const hours = curve()
+      .slice(0, 3)
+      .map((h, i) => ({ ...h, tide_rising: i === 0 ? null : false }));
     expect(nextTideTurn(hours)).toBeNull();
   });
 });

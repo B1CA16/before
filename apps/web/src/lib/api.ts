@@ -16,6 +16,9 @@ export type ScoreNow = {
   swell_height_m: number | null;
   swell_period_s: number | null;
   wind_speed_kmh: number | null;
+  /** How much was added to the published forecast wind, km/h. Null when nothing was
+   * adjusted: an archive reading, a missing wind, or no correction deployed. */
+  wind_correction_kmh: number | null;
   offshore_component: number | null;
   swell_direction_deg: number | null;
   wind_direction_deg: number | null;
@@ -36,6 +39,9 @@ export type ForecastHour = {
   swell_height_m: number | null;
   swell_period_s: number | null;
   wind_speed_kmh: number | null;
+  /** How much was added to the published forecast wind, km/h. Null when nothing was
+   * adjusted: an archive reading, a missing wind, or no correction deployed. */
+  wind_correction_kmh: number | null;
 };
 
 async function getJson<T>(path: string): Promise<T> {
@@ -65,7 +71,7 @@ async function fetchWithRetry(
   url: string,
   init: RequestInit,
   label: string,
-  attempts = 3
+  attempts = 3,
 ): Promise<Response> {
   let lastError: unknown;
   for (let attempt = 1; attempt <= attempts; attempt += 1) {
@@ -86,7 +92,9 @@ async function fetchWithRetry(
       // ignores the extra parameter, verified against all four endpoints including that the payload
       // is byte-identical with and without it.
       const attemptUrl =
-        attempt === 1 ? url : `${url}${url.includes("?") ? "&" : "?"}_attempt=${attempt}`;
+        attempt === 1
+          ? url
+          : `${url}${url.includes("?") ? "&" : "?"}_attempt=${attempt}`;
       const res = await fetch(attemptUrl, init);
       if (res.ok || !TRANSIENT.has(res.status)) return res;
       lastError = new Error(`${label} failed: ${res.status}`);
@@ -97,7 +105,9 @@ async function fetchWithRetry(
     if (attempt < attempts) {
       // 400 ms, then 1200 ms. Long enough for a Render instance to finish waking, short enough not
       // to stall a build.
-      await new Promise((resolve) => setTimeout(resolve, 400 * 3 ** (attempt - 1)));
+      await new Promise((resolve) =>
+        setTimeout(resolve, 400 * 3 ** (attempt - 1)),
+      );
     }
   }
   throw lastError instanceof Error ? lastError : new Error(`${label} failed`);
@@ -115,12 +125,12 @@ export const getSpots = () => getJson<Spot[]>("/spots");
  */
 export async function getSpotWithScore(
   slug: string,
-  revalidate = 3600
+  revalidate = 3600,
 ): Promise<SpotWithScore | null> {
   const res = await fetchWithRetry(
     BASE + "/spots/" + slug,
     { next: { revalidate } },
-    `API /spots/${slug}`
+    `API /spots/${slug}`,
   );
   if (res.status === 404) return null;
   if (!res.ok) throw new Error("API /spots/" + slug + " failed: " + res.status);
@@ -128,33 +138,51 @@ export async function getSpotWithScore(
 }
 
 /** Cached variants for server rendering, where no-store would defeat the point. */
-export async function getForecastCached(slug: string, revalidate = 3600): Promise<ForecastHour[]> {
+export async function getForecastCached(
+  slug: string,
+  revalidate = 3600,
+): Promise<ForecastHour[]> {
   const res = await fetchWithRetry(
     BASE + "/spots/" + slug + "/forecast",
     { next: { revalidate } },
-    "API forecast"
+    "API forecast",
   );
   if (!res.ok) throw new Error("API forecast failed: " + res.status);
   return (await res.json()) as ForecastHour[];
 }
 
 export async function getScoresCached(revalidate = 3600): Promise<ScoreNow[]> {
-  const res = await fetchWithRetry(BASE + "/scores", { next: { revalidate } }, "API /scores");
+  const res = await fetchWithRetry(
+    BASE + "/scores",
+    { next: { revalidate } },
+    "API /scores",
+  );
   if (!res.ok) throw new Error("API /scores failed: " + res.status);
   return (await res.json()) as ScoreNow[];
 }
 
 export async function getSpotsCached(revalidate = 3600): Promise<Spot[]> {
-  const res = await fetchWithRetry(BASE + "/spots", { next: { revalidate } }, "API /spots");
+  const res = await fetchWithRetry(
+    BASE + "/spots",
+    { next: { revalidate } },
+    "API /spots",
+  );
   if (!res.ok) throw new Error("API /spots failed: " + res.status);
   return (await res.json()) as Spot[];
 }
 export const getScores = () => getJson<ScoreNow[]>("/scores");
-export const getForecast = (slug: string) => getJson<ForecastHour[]>(`/spots/${slug}/forecast`);
+export const getForecast = (slug: string) =>
+  getJson<ForecastHour[]>(`/spots/${slug}/forecast`);
 
 /* --- sessions (labels) -------------------------------------------------------------------------- */
 
-export const SESSION_TAGS = ["good_shape", "crowded", "too_small", "too_big", "blown_out"] as const;
+export const SESSION_TAGS = [
+  "good_shape",
+  "crowded",
+  "too_small",
+  "too_big",
+  "blown_out",
+] as const;
 export type SessionTag = (typeof SESSION_TAGS)[number];
 
 export const TAG_LABELS: Record<SessionTag, string> = {
@@ -183,6 +211,9 @@ export type ConditionsAt = {
   swell_height_m: number | null;
   swell_period_s: number | null;
   wind_speed_kmh: number | null;
+  /** How much was added to the published forecast wind, km/h. Null when nothing was
+   * adjusted: an archive reading, a missing wind, or no correction deployed. */
+  wind_correction_kmh: number | null;
   offshore_component: number | null;
 };
 
@@ -198,7 +229,9 @@ async function readError(res: Response): Promise<string> {
     if (typeof detail === "string") return detail;
     if (Array.isArray(detail) && detail.length) {
       const first = detail[0];
-      const field = Array.isArray(first?.loc) ? first.loc[first.loc.length - 1] : null;
+      const field = Array.isArray(first?.loc)
+        ? first.loc[first.loc.length - 1]
+        : null;
       return field ? `${field}: ${first.msg}` : String(first.msg);
     }
   } catch {
@@ -207,7 +240,11 @@ async function readError(res: Response): Promise<string> {
   return `Request failed (${res.status})`;
 }
 
-async function authed<T>(path: string, token: string, init: RequestInit = {}): Promise<T> {
+async function authed<T>(
+  path: string,
+  token: string,
+  init: RequestInit = {},
+): Promise<T> {
   const res = await fetch(`${BASE}${path}`, {
     ...init,
     cache: "no-store",
@@ -230,12 +267,16 @@ export function logSession(
     rating: number;
     tags: SessionTag[];
     note: string | null;
-  }
+  },
 ) {
-  return authed<SessionRow>("/sessions", token, { method: "POST", body: JSON.stringify(body) });
+  return authed<SessionRow>("/sessions", token, {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
 }
 
-export const getMySessions = (token: string) => authed<SessionRow[]>("/sessions", token);
+export const getMySessions = (token: string) =>
+  authed<SessionRow[]>("/sessions", token);
 
 export const deleteSession = (token: string, id: number) =>
   authed<void>(`/sessions/${id}`, token, { method: "DELETE" });
@@ -250,7 +291,8 @@ export const deleteAccount = (token: string) =>
  * user data in a shared cache is served to whoever asks next.
  */
 
-export const getFavourites = (token: string) => authed<string[]>("/favourites", token);
+export const getFavourites = (token: string) =>
+  authed<string[]>("/favourites", token);
 
 /** Idempotent, so the caller never has to know the current state before asking. */
 export const addFavourite = (token: string, slug: string) =>
@@ -264,10 +306,16 @@ export const removeFavourite = (token: string, slug: string) =>
  * hour, which is a real answer worth showing: without conditions the session cannot become a
  * training example.
  */
-export async function getConditionsAt(slug: string, at: string): Promise<ConditionsAt | null> {
-  const res = await fetch(`${BASE}/spots/${slug}/conditions?at=${encodeURIComponent(at)}`, {
-    cache: "no-store",
-  });
+export async function getConditionsAt(
+  slug: string,
+  at: string,
+): Promise<ConditionsAt | null> {
+  const res = await fetch(
+    `${BASE}/spots/${slug}/conditions?at=${encodeURIComponent(at)}`,
+    {
+      cache: "no-store",
+    },
+  );
   if (res.status === 404) return null;
   if (!res.ok) throw new Error(await readError(res));
   return (await res.json()) as ConditionsAt;

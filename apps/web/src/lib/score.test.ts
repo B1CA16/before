@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 
-import { SCORE_COLORS, scoreColor, scoreLabel, scoreWordKey, windWordKey } from "./score";
+import {
+  SCORE_COLORS,
+  scoreColor,
+  scoreLabel,
+  scoreWordKey,
+  windAdjustmentLabel,
+  windWordKey,
+} from "./score";
 
 describe("score helpers", () => {
   it("labels a score to one decimal, dash for null", () => {
@@ -52,5 +59,27 @@ describe("verdict keys and message catalogues", () => {
         expect(catalogue.wind[windWordKey(wind)]).toBeTruthy();
       }
     }
+  });
+});
+
+describe("windAdjustmentLabel", () => {
+  it("always shows the sign, so the direction is never guessed", () => {
+    expect(windAdjustmentLabel(3.24)).toBe("+3.2");
+    expect(windAdjustmentLabel(-1.36)).toBe("-1.4");
+  });
+
+  it("says nothing when there was no correction", () => {
+    expect(windAdjustmentLabel(null)).toBeNull();
+    expect(windAdjustmentLabel(0)).toBeNull();
+  });
+
+  it("says nothing when the correction rounds away", () => {
+    // Otherwise the page announces an adjustment of "+0.0", which reads as a bug.
+    expect(windAdjustmentLabel(0.04)).toBeNull();
+    expect(windAdjustmentLabel(-0.02)).toBeNull();
+  });
+
+  it("keeps one decimal place even when it is a zero", () => {
+    expect(windAdjustmentLabel(2.0)).toBe("+2.0");
   });
 });

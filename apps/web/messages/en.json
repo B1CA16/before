@@ -226,7 +226,8 @@
     "viewFull": "Full report",
     "weakest": "<b>{factor}</b> is holding it back. The score only climbs when every factor does.",
     "whyThisScore": "Why this score",
-    "wind": "Wind"
+    "wind": "Wind",
+    "windAdjusted": "Wind adjusted by {delta} km/h against the published forecast, from how it has typically missed at this hour."
   },
   "tags": {
     "good_shape": "Good shape",

@@ -13,6 +13,7 @@ def _current_df():
         [
             {
                 "slug": "carcavelos",
+                "observed_at": pd.Timestamp("2026-08-20T09:00:00Z"),
                 "orientation_deg": 270.0,
                 "swell_height_m": 1.8,
                 "swell_period_s": 12.0,
@@ -22,6 +23,7 @@ def _current_df():
             },
             {
                 "slug": "unknown-orient",
+                "observed_at": pd.Timestamp("2026-08-20T09:00:00Z"),
                 "orientation_deg": np.nan,
                 "swell_height_m": 1.0,
                 "swell_period_s": 9.0,
@@ -34,7 +36,9 @@ def _current_df():
 
 
 def test_build_score_rows_and_nan():
-    rows = build_score_rows(_current_df(), HeuristicScorer())
+    # correction=None: this test is about conditions reaching the client unaltered, so it opts out
+    # of the wind correction rather than hard-coding a number the artefact happens to produce.
+    rows = build_score_rows(_current_df(), HeuristicScorer(), correction=None)
     by_slug = {r["slug"]: r for r in rows}
     assert 0.0 <= by_slug["carcavelos"]["score"] <= 10.0
     assert by_slug["unknown-orient"]["score"] is None  # unknown orientation -> null score
@@ -43,6 +47,7 @@ def test_build_score_rows_and_nan():
     assert carca["swell_height_m"] == 1.8
     assert carca["swell_period_s"] == 12.0
     assert carca["wind_speed_kmh"] == 8.0
+    assert carca["wind_correction_kmh"] is None
     assert carca["offshore_component"] is not None  # 270-facing beach, wind from 90 = offshore
     # the raw bearings travel through so the UI can draw the geometry
     assert carca["swell_direction_deg"] == 270.0

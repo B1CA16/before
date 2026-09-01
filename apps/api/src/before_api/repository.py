@@ -34,7 +34,7 @@ order by c.observed_at
 # lets a single spot page reuse the same query rather than scoring all 92 and discarding 91.
 _CURRENT_CONDITIONS_QUERY = """
 select distinct on (s.slug)
-       s.slug, s.orientation_deg,
+       s.slug, s.orientation_deg, c.observed_at,
        c.swell_height_m, c.swell_period_s, c.swell_direction_deg,
        c.wind_speed_kmh, c.wind_direction_deg, c.sea_level_m
 from spots s

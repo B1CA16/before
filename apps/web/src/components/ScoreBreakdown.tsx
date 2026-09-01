@@ -3,6 +3,7 @@
 import { useTranslations } from "next-intl";
 
 import type { ForecastHour } from "@/lib/api";
+import { windAdjustmentLabel } from "@/lib/score";
 
 // Keys only. The displayed word is looked up per locale, so this table cannot drift from the
 // catalogue the way a hard-coded pair of key and label would.
@@ -28,10 +29,16 @@ export default function ScoreBreakdown({
   bare?: boolean;
 }) {
   const t = useTranslations("spot");
-  const rows = FACTORS.map(([key, label]) => ({ key, label: t(label), value: hour[key] }));
+  const rows = FACTORS.map(([key, label]) => ({
+    key,
+    label: t(label),
+    value: hour[key],
+  }));
   const scored = rows.filter((r) => r.value !== null);
   if (scored.length === 0) return null;
   const weakest = scored.reduce((a, b) => (b.value! < a.value! ? b : a));
+
+  const adjustment = windAdjustmentLabel(hour.wind_correction_kmh);
 
   return (
     <section className={bare ? "" : "mt-4 border-t border-hairline pt-3.5"}>
@@ -40,8 +47,13 @@ export default function ScoreBreakdown({
         {rows.map(({ key, label, value }) => {
           const isWeakest = key === weakest.key;
           return (
-            <div key={key} className="grid grid-cols-[66px_1fr_30px] items-center gap-3">
-              <span className={`text-meta ${isWeakest ? "text-secondary" : "text-faint"}`}>
+            <div
+              key={key}
+              className="grid grid-cols-[66px_1fr_30px] items-center gap-3"
+            >
+              <span
+                className={`text-meta ${isWeakest ? "text-secondary" : "text-faint"}`}
+              >
                 {label}
               </span>
               <span className="h-1 overflow-hidden rounded-full bg-inset">
@@ -49,7 +61,9 @@ export default function ScoreBreakdown({
                   className="block h-full rounded-full"
                   style={{
                     width: `${(value ?? 0) * 100}%`,
-                    background: isWeakest ? "var(--color-accent)" : "var(--color-edge)",
+                    background: isWeakest
+                      ? "var(--color-accent)"
+                      : "var(--color-edge)",
                   }}
                 />
               </span>
@@ -65,9 +79,19 @@ export default function ScoreBreakdown({
           factor: weakest.label,
           // Emphasised because the weakest factor IS the explanation: with a conjunctive mean, that
           // one number decides the total, and it was previously the same weight as the words around it.
-          b: (chunks) => <span className="font-semibold text-secondary">{chunks}</span>,
+          b: (chunks) => (
+            <span className="font-semibold text-secondary">{chunks}</span>
+          ),
         })}
       </p>
+      {adjustment !== null && (
+        // Said out loud rather than applied silently. The wind shown here is not the number the
+        // forecaster published, and a surfer comparing this page against another forecast deserves
+        // to know why they differ instead of concluding one of them is broken.
+        <p className="meta mt-1.5 text-faint">
+          {t("windAdjusted", { delta: adjustment })}
+        </p>
+      )}
     </section>
   );
 }

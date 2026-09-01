@@ -33,6 +33,7 @@ def test_build_forecast_rows_shapes_a_row():
         "swell_height_m",
         "swell_period_s",
         "wind_speed_kmh",
+        "wind_correction_kmh",
         "sea_level_m",
         "tide_state",
         "tide_rising",

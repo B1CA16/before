@@ -59,3 +59,21 @@ export function windWordKey(offshoreComponent: number | null): WindWord {
   if (offshoreComponent < -0.3) return "onshore";
   return "cross";
 }
+
+/**
+ * How to render the wind correction, or null when there is nothing worth saying.
+ *
+ * A decision rather than markup, which is why it lives here and is tested. Two cases would
+ * otherwise read as bugs to a user: a correction of 0.04 km/h formats as "+0.0", and a correction
+ * of exactly nothing is not the same claim as "we looked and left it alone". Both become null.
+ *
+ * The sign is always explicit. "Wind adjusted by 3.2" leaves the reader guessing which way.
+ */
+export function windAdjustmentLabel(
+  correctionKmh: number | null,
+): string | null {
+  if (correctionKmh === null || !Number.isFinite(correctionKmh)) return null;
+  const rounded = Number(correctionKmh.toFixed(1));
+  if (rounded === 0) return null;
+  return rounded > 0 ? `+${rounded.toFixed(1)}` : rounded.toFixed(1);
+}

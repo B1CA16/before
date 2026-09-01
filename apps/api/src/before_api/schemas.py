@@ -25,10 +25,14 @@ class SpotOut(BaseModel):
 
 class ScoreOut(BaseModel):
     slug: str
+    observed_at: datetime | None = None
     score: float | None
     swell_height_m: float | None
     swell_period_s: float | None
     wind_speed_kmh: float | None
+    #: How much was added to the published forecast wind, in km/h. Null when no correction
+    #: was applied: an archive reading, a missing wind, or no artefact deployed.
+    wind_correction_kmh: float | None = None
     offshore_component: float | None
     # The raw bearings, so the UI can draw the geometry the score is built from.
     swell_direction_deg: float | None
@@ -58,6 +62,9 @@ class ForecastHour(BaseModel):
     swell_height_m: float | None
     swell_period_s: float | None
     wind_speed_kmh: float | None
+    #: How much was added to the published forecast wind, in km/h. Null when no correction
+    #: was applied: an archive reading, a missing wind, or no artefact deployed.
+    wind_correction_kmh: float | None = None
 
 
 class ConditionsAt(BaseModel):
@@ -73,6 +80,9 @@ class ConditionsAt(BaseModel):
     swell_height_m: float | None
     swell_period_s: float | None
     wind_speed_kmh: float | None
+    #: How much was added to the published forecast wind, in km/h. Null when no correction
+    #: was applied: an archive reading, a missing wind, or no artefact deployed.
+    wind_correction_kmh: float | None = None
     offshore_component: float | None
     sea_level_m: float | None = None
 
