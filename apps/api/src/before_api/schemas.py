@@ -41,6 +41,15 @@ class ScoreOut(BaseModel):
     sea_level_m: float | None = None
 
 
+class Readiness(BaseModel):
+    """The keep-warm probe's answer: did the real path work, in as few bytes as possible."""
+
+    ok: bool
+    spots: int
+    scored: int
+    observed_at: datetime | None = None
+
+
 class SpotWithScore(BaseModel):
     """One spot and its current reading, so a server-rendered page needs a single request."""
 

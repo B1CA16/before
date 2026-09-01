@@ -27,7 +27,8 @@ matters for the choice of endpoint below.
 ## Decision
 
 An external scheduler (cron-job.org, on an account we already hold) issues `GET /scores` every
-5 minutes between 05:00 and 21:00 Europe/Lisbon.
+5 minutes between 05:00 and 21:00 Europe/Lisbon. **Superseded by the 2026-09-01 update below:
+the target is now `GET /ready` and the interval is 10 minutes.**
 
 **`/scores`, deliberately, and not `/health`.** `/health` returns a static dict and touches nothing,
 so it would report `200 ok` while the database was unreachable, the credentials had expired or the
@@ -94,3 +95,42 @@ API was opening a **new database connection per request**. Prerendering 92 pages
 `EMAXCONNSESSION`, because Supabase's session-mode pooler caps a project at 15 clients. Fixed with a
 bounded `ConnectionPool` (max 6) in the repository. That bug was always present; concurrency merely
 made it visible, and a burst of real traffic would have found it eventually.
+
+## Update, 2026-09-01: the scheduler was rate-limited
+
+cron-job.org stopped running the job, reporting "Too many requests: the server is rate-limiting you.
+Consider reducing the job's execution frequency."
+
+**Measured before changing anything, and the API is not the culprit.** Eight rapid requests to
+`https://before-api.onrender.com/scores` all returned 200 in about 0.4 s, with no `Retry-After`, no
+`RateLimit-*` headers and no Cloudflare mitigation header. Repeating them with cron-job.org's own
+User-Agent, in case Cloudflare (which fronts Render) treats automated traffic differently, also
+returned eight 200s. So the 429 could not be reproduced from here and is not coming from our code.
+
+What did turn up is that **the ping had quietly grown**. This ADR recorded roughly 15 KB per
+request; it now measures **24,853 bytes**, because M9 added `observed_at` and `wind_correction_kmh`
+to every one of the 92 rows in `/scores`. Nothing flagged that: an endpoint getting 65% heavier is
+invisible to tests.
+
+Two changes, addressing the two things it could plausibly be.
+
+**A dedicated `GET /ready`, replacing `/scores` as the ping target.** It runs the identical query and
+the identical scoring path, so it still fails whenever the product is genuinely broken and still
+counts as Supabase activity, which were the two reasons `/health` was rejected in the first place. It
+returns about 90 bytes instead of 25 KB, and answers **503** rather than a cheerful 200 when no spot
+can be scored, because the scheduler reads status codes and not response bodies.
+
+**Halve the frequency: every 10 minutes rather than every 5.** This is a configuration change on
+cron-job.org, not in this repository. It is following the scheduler's own advice rather than a
+diagnosis, since the 429 was not reproducible.
+
+The cost is a property this ADR previously valued: at 5 minutes a single failed ping still left the
+next one inside the 15-minute spin-down window, and at 10 minutes it does not, so an isolated failure
+now means one cold start. That is judged acceptable, because the ADR already accepts a cold start
+every morning at 05:00 for the same reason. **7 minutes is the alternative** that halves nothing but
+preserves single-failure tolerance; it is the fallback if 10 minutes turns out not to satisfy the
+scheduler.
+
+Worth being honest about the limits of this: the cause was never confirmed. If the job is throttled
+again at 10 minutes with a 90-byte payload, the next suspect is cron-job.org's own fair-use policy
+rather than anything at our end, and the answer is a different scheduler or accepting cold starts.

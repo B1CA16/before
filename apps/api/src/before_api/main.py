@@ -12,6 +12,7 @@ from before_api.repository import SupabaseRepository, get_repository
 from before_api.schemas import (
     ConditionsAt,
     ForecastHour,
+    Readiness,
     ScoreOut,
     SessionIn,
     SessionOut,
@@ -47,6 +48,36 @@ RepoDep = Annotated[SupabaseRepository, Depends(get_repository)]
 @app.get("/health")
 def health() -> dict:
     return {"status": "ok"}
+
+
+@app.get("/ready", response_model=Readiness)
+def ready(repo: RepoDep):
+    """A real readiness check, for the scheduler that keeps this free instance awake.
+
+    `/health` returns a static dict and would report `200 ok` with the database unreachable, so
+    ADR-0004 pointed the keep-warm ping at `/scores` instead: a monitor that cannot fail is a
+    monitor that lies. That was right, and it made every ping download all 92 scored spots. The
+    payload has since grown to about 25 KB, and the scheduler started reporting that it was being
+    rate-limited.
+
+    This runs exactly the same query and the same scoring path as `/scores`, so it fails whenever
+    the product is genuinely broken, and returns roughly 90 bytes instead of 25 KB. It also keeps
+    Supabase awake, which is the other job the ping quietly does.
+
+    A 503 when nothing can be scored, deliberately. Returning `{"ok": false}` with a 200 would need
+    the scheduler to parse the body to notice, and it does not: it looks at the status code.
+    """
+    rows = build_score_rows(repo.get_current_conditions(), _scorer)
+    scored = [row for row in rows if row["score"] is not None]
+    if not scored:
+        # Every spot unscorable means the conditions table is empty or the pipeline is broken.
+        raise HTTPException(status_code=503, detail="no spot could be scored")
+    return {
+        "ok": True,
+        "spots": len(rows),
+        "scored": len(scored),
+        "observed_at": rows[0]["observed_at"],
+    }
 
 
 @app.get("/spots", response_model=list[SpotOut])
