@@ -101,12 +101,51 @@ impute a fake bearing.
 
 ### Task 2: baselines, written down before any model exists
 
-- [ ] `evaluate.py` reporting MAE and RMSE for: do nothing, subtract the global constant, subtract the
+- [x] `evaluate.py` reporting MAE and RMSE for: do nothing, subtract the global constant, subtract the
       per-spot constant, subtract the per-hour-of-day constant.
-- [ ] The per-spot and per-hour baselines matter: they are cheap, interpretable, and if one of them beats
+- [x] The per-spot and per-hour baselines matter: they are cheap, interpretable, and if one of them beats
       the model then the model is not worth shipping. Writing them first is what stops a mediocre model
       looking good.
-- [ ] **Commit:** `feat: add forecast-correction baselines`
+- [x] **Commit:** `feat: add forecast-correction baselines`
+
+**Results.** All fitted on the training weeks, all scored on the held-out weeks.
+
+| Baseline | train MAE | test MAE | test RMSE | fitted |
+| --- | --- | --- | --- | --- |
+| **per hour of day** | 2.435 | **2.333** | 2.988 | 100% |
+| global median (+2.500) | 2.809 | 2.390 | 3.088 | 100% |
+| per spot + hour | 2.809 | 2.390 | 3.088 | **0%** |
+| global mean (+2.725) | 2.814 | 2.427 | 3.118 | 100% |
+| per spot | 2.414 | **2.623** | 3.352 | 100% |
+| do nothing | 3.512 | 2.945 | 3.777 | 100% |
+
+**The bar for Task 3 is 2.333 km/h**, the per-hour-of-day constant. Three findings, each of which
+changes what Task 3 should do.
+
+**1. Per-spot correction does not survive a temporal split.** It is the best baseline on the training
+weeks (2.414, better than per-hour) and the second *worst* on the held-out ones (2.623). Read the gap
+column against "do nothing": the test weeks are simply calmer, so every honest method improves by
+roughly 0.4 to 0.6 when it moves across the boundary. Per spot instead gets 0.208 worse, giving back
+about 0.78 km/h relative to the period effect. The per-spot spread of -0.81 to +6.20 that the
+exploratory pass found was real for those weeks and did not generalise to the next ones. This is the
+clearest possible illustration of why the split had to be by time: a random split would have scored
+this baseline at roughly 2.41 and recommended shipping it.
+
+**2. There is not enough data for a per-spot-per-hour correction.** 55,752 training rows over 2,208
+cells is about 25 rows each, under the 30-row guard, so every cell was rejected and the baseline
+collapsed into the global median. The `fitted` column exists to make that visible: without it the two
+identical rows read as a coincidence rather than as a measurement. The finding is real and worth
+keeping: 34 days does not support a correction that fine-grained.
+
+**3. The median beats the mean, as the theory says it must.** 2.390 against 2.427. The median is the
+constant that minimises absolute error, the mean the one that minimises squared error, so reporting
+MAE while fitting the mean would have set the bar a little too low. Small, but it is the exact shape
+of error that makes a benchmark quietly dishonest.
+
+**Consequences for Task 3.** Hour of day is the feature that carries real, transferable signal. Spot
+identity must be handed to the model with suspicion: it is exactly the feature a gradient booster
+will happily memorise, and the per-spot baseline is direct evidence that memorising it does not pay
+across time. Train once with it and once without, and let the held-out weeks decide.
 
 ### Task 3: the model
 
