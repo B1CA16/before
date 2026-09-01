@@ -20,7 +20,9 @@ jobs:
         run: uv python install 3.12
 
       - name: Sync workspace
-        run: uv sync --all-packages --locked
+        # --group train adds scikit-learn, which the correction-model tests need. It is a named
+        # group rather than a dev dependency so the Render build does not install it.
+        run: uv sync --all-packages --locked --group train
 
       - name: Ruff lint
         run: uv run ruff check .

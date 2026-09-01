@@ -17,6 +17,14 @@ testpaths = ["ml/tests", "apps/api/tests"]
 addopts = "-ra"
 
 [dependency-groups]
+# Kept out of the default `dev` group on purpose. Render builds the API with
+# `uv sync --all-packages --locked`, which installs `dev` but not a named group, so scikit-learn and
+# scipy stay off a 512 MB free-tier instance that has no use for them. Training runs locally and in
+# CI, both of which pass `--group train` explicitly. If a trained model ever needs to be loaded at
+# request time, this moves into ml's real dependencies and that cost gets paid deliberately.
+train = [
+    "scikit-learn>=1.7.0",
+]
 dev = [
     "jupyterlab>=4.6.2",
     "jupytext>=1.19.5",

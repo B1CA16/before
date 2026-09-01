@@ -135,6 +135,14 @@ def build_features(pairs: pd.DataFrame) -> pd.DataFrame:
     offset = (frame["f_wind_direction_deg"] - frame["orientation_deg"]).abs() % 360
     frame["wind_offshore_deg"] = offset.where(offset <= 180, 360 - offset)
 
+    # Absolute wind bearing, on a circle for the same reason the hour is: 359 and 1 degrees are one
+    # degree apart, and a tree given the raw number would have to spend splits rediscovering that.
+    # It earns its place separately from the offshore angle above, because a forecast model can be
+    # biased about a northerly along this coast regardless of which way any particular beach faces.
+    bearing = frame["f_wind_direction_deg"] * (np.pi / 180)
+    frame["wind_dir_sin"] = np.sin(bearing)
+    frame["wind_dir_cos"] = np.cos(bearing)
+
     return frame
 
 

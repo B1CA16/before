@@ -136,16 +136,24 @@ def fit_grouped(
     )
 
 
+# Recipes rather than fitted objects, because a baseline has to be refittable on demand. Choosing
+# which family to use is itself a decision that must be made without looking at the test weeks, and
+# that means fitting each family on an inner slice, picking a winner, then refitting the winner on
+# everything. A fitted `Baseline` cannot be refitted, and its name carries a fitted constant in it,
+# so the family needs a stable key of its own.
+BASELINE_RECIPES: dict[str, Callable[[pd.DataFrame], "Baseline"]] = {
+    "do nothing": lambda train: fit_zero(),
+    "global mean": lambda train: fit_constant(train, statistic="mean"),
+    "global median": lambda train: fit_constant(train, statistic="median"),
+    "per spot": lambda train: fit_grouped(train, ["spot"]),
+    "per hour": lambda train: fit_grouped(train, ["hour"]),
+    "per spot + hour": lambda train: fit_grouped(train, ["spot", "hour"]),
+}
+
+
 def fit_all(train: pd.DataFrame) -> list[Baseline]:
     """Every baseline the model will have to beat, all fitted on the training weeks only."""
-    return [
-        fit_zero(),
-        fit_constant(train, statistic="mean"),
-        fit_constant(train, statistic="median"),
-        fit_grouped(train, ["spot"]),
-        fit_grouped(train, ["hour"]),
-        fit_grouped(train, ["spot", "hour"]),
-    ]
+    return [recipe(train) for recipe in BASELINE_RECIPES.values()]
 
 
 def fitted_share(baseline: Baseline, frame: pd.DataFrame) -> float:
@@ -166,18 +174,28 @@ def evaluate(split: Split) -> pd.DataFrame:
     "do nothing" manages on the same two periods. Anything that memorises the training weeks gives
     that advantage back.
     """
+    return compare(fit_all(split.train), split)
+
+
+def compare(methods: Sequence[Baseline], split: Split) -> pd.DataFrame:
+    """Score any set of fitted methods on the same split, by the same code.
+
+    Models go through here too. A model that computed its own MAE with its own helper would be one
+    refactor away from being scored slightly differently from the baselines it is being compared
+    against, and the comparison is the entire point of this milestone.
+    """
     rows = []
-    for baseline in fit_all(split.train):
-        on_train = score(split.train["error_kmh"], baseline.predict(split.train))
-        on_test = score(split.test["error_kmh"], baseline.predict(split.test))
+    for method in methods:
+        on_train = score(split.train["error_kmh"], method.predict(split.train))
+        on_test = score(split.test["error_kmh"], method.predict(split.test))
         rows.append(
             {
-                "baseline": baseline.name,
+                "baseline": method.name,
                 "train_mae": on_train.mae,
                 "test_mae": on_test.mae,
                 "test_rmse": on_test.rmse,
                 "gap": on_test.mae - on_train.mae,
-                "fitted": fitted_share(baseline, split.test),
+                "fitted": fitted_share(method, split.test),
             }
         )
     return pd.DataFrame(rows).sort_values("test_mae").reset_index(drop=True)
@@ -196,8 +214,9 @@ def format_table(table: pd.DataFrame) -> str:
         )
     best = table.iloc[0]
     lines.append("")
-    lines.append(f"Best baseline: {best['baseline']} at MAE {best['test_mae']:.3f} km/h.")
-    lines.append("A model that does not beat that number is not worth shipping.")
+    lines.append(f"Best method here: {best['baseline']} at MAE {best['test_mae']:.3f} km/h.")
+    lines.append("Read this table as a ranking only. Whether a margin is real is a separate")
+    lines.append("question, and one a single split cannot answer.")
     lines.append("")
     lines.append("`fitted` is the share of test rows the baseline had a real group estimate for.")
     lines.append("A low share means the guard rejected those groups as too thin, and the baseline")

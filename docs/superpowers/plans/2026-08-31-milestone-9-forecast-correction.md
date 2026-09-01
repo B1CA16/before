@@ -149,16 +149,94 @@ across time. Train once with it and once without, and let the held-out weeks dec
 
 ### Task 3: the model
 
-- [ ] Gradient boosting (start with scikit-learn's `HistGradientBoostingRegressor`, no new dependency).
-      Tabular, non-linear, handles the interaction between hour, spot and wind speed, and trains in
-      seconds on this size.
-- [ ] Compare against **every** baseline from Task 2 on the held-out weeks, not on training data.
-- [ ] Feature importance, to check the model is using hour and spot the way the exploratory numbers
-      suggest. If it is not, one of the two is wrong and that is worth knowing.
-- [ ] **A real decision point:** if the model does not beat the best simple baseline by a margin that
-      survives the small effective sample size, **ship the baseline instead** and record why. A constant
-      per spot that beats gradient boosting is a legitimate and publishable result.
-- [ ] **Commit:** `feat: train the wind forecast correction model`
+- [x] Gradient boosting with scikit-learn's `HistGradientBoostingRegressor`. **Correction: this is a
+      new dependency, the plan was wrong.** It is declared in a `train` dependency group rather than
+      in `ml`'s runtime requirements, because Render builds the API with `uv sync --all-packages`,
+      which installs the default `dev` group but not a named one. So scikit-learn and scipy reach CI
+      and this machine, and stay off a 512 MB free-tier instance with no use for them. If Task 4
+      decides to serve the model, that cost gets paid deliberately and visibly.
+- [x] Compare against **every** baseline from Task 2 on the held-out weeks, not on training data.
+- [x] Feature importance, grouped so cyclic pairs are shuffled together.
+- [x] **The decision point**, answered below with more evidence than the plan asked for.
+- [x] **Commit:** `feat: train the wind forecast correction model`
+
+`loss="absolute_error"`, matching the metric, for the same reason the median beat the mean in Task 2.
+Early stopping is done by hand on an inner temporal split: scikit-learn's `early_stopping=True`
+carves its validation set out of the training rows **at random**, which would have quietly undone the
+whole of Task 1 while reporting no error at all.
+
+**Ranking on the single held-out split.**
+
+| Method | train MAE | test MAE | test RMSE | gap |
+| --- | --- | --- | --- | --- |
+| **gradient boosting + spot** | 1.432 | **2.203** | 2.829 | +0.771 |
+| per hour | 2.435 | 2.333 | 2.988 | -0.102 |
+| global median (+2.500) | 2.809 | 2.390 | 3.088 | -0.419 |
+| global mean (+2.725) | 2.814 | 2.427 | 3.118 | -0.387 |
+| gradient boosting (no spot) | 1.783 | 2.449 | 3.088 | +0.666 |
+| per spot | 2.414 | 2.623 | 3.352 | +0.208 |
+| do nothing | 3.512 | 2.945 | 3.777 | -0.567 |
+
+**Spot identity is worth 0.25 km/h to the model and costs the baseline 0.29.** The per-spot *constant*
+was the second-worst method on the held-out weeks, yet spot is the model's single most important
+feature by permutation (+0.42) and the model that uses it beats the model that does not. The two facts
+are consistent: a fixed offset per spot is a claim that Carcavelos is windier than forecast by the
+same amount at 3am in a storm as at 4pm in a sea breeze, and that claim does not survive to the next
+fortnight. The booster uses spot only where it interacts with hour and wind speed, and the tree
+structure lets thin spots fall back on their neighbours. **The plan's instruction to hand spot to the
+model with suspicion was right, and the suspicion was resolved in the model's favour by measurement.**
+
+**Whether the margin is real.** Three ways of asking, because a single split answers only the weakest
+version of the question. The paired bootstrap resamples **hours**, not rows; resampling rows would
+treat 92 spots in one hour as 92 independent observations and return an interval far too narrow.
+
+| Question | Margin over the baseline | 95% CI | Verdict |
+| --- | --- | --- | --- |
+| Single split, vs the blind-chosen baseline | +0.419 | [+0.279, +0.550] | real |
+| Single split, vs the best baseline on test | +0.129 | [+0.031, +0.232] | real |
+| Pooled over 3 folds, vs blind baselines | +0.440 | [+0.355, +0.531] | real |
+| **Pooled over 3 folds, vs oracle baselines** | **+0.276** | **[+0.170, +0.374]** | **real** |
+
+The last row is the one to trust: 402 hours of honestly out-of-time predictions, against an opponent
+allowed to pick with hindsight whichever baseline turned out best on each fold. The model still wins.
+
+**But the margin is shrinking, and that is the finding to carry into Task 4.**
+
+| Fold | train | test | baseline | model | margin | 95% CI |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1 | 402h | 136h | 2.626 | 1.688 | +0.938 | [+0.820, +1.054] |
+| 2 | 538h | 130h | 2.970 | 2.671 | +0.299 | [+0.117, +0.462] |
+| 3 | 668h | 136h | 2.191 | 2.114 | +0.078 | [-0.046, +0.206] |
+
+As a share of the baseline that is 36%, 10%, then 3.6%, and the most recent fold cannot distinguish
+the model from its baseline at all. The pooled +0.276 is carried largely by fold 1. Two readings fit:
+the later weeks are simply calmer and better forecast, so there is less error left to correct; or the
+advantage is genuinely eroding. **Three folds cannot separate those**, and the honest position is that
+the model is better on the evidence available while the most recent evidence is the weakest.
+
+Also worth recording: the train/test gap of +0.771 is the largest in the table, so the model *is*
+overfitting substantially. That is not disqualifying, since it still wins on data it has never seen,
+but it says the ceiling here is data, not architecture.
+
+**Permutation importance** on the held-out weeks, MAE increase when a feature group is shuffled. The
+cyclic pairs are shuffled as units; moving `hour_sin` while leaving `hour_cos` in place would let the
+model reconstruct the hour and report the feature as unimportant.
+
+| Feature | with spot | without spot |
+| --- | --- | --- |
+| spot | +0.42 | n/a |
+| hour of day | +0.25 | +0.25 |
+| wind bearing | +0.14 | +0.06 |
+| forecast wind speed | +0.14 | +0.06 |
+| swell period | +0.04 | +0.03 |
+| swell height | +0.04 | +0.12 |
+| wind vs shore | +0.00 | +0.05 |
+
+Hour of day is confirmed as the exploratory pass suggested. `wind_offshore_deg` contributing nothing
+once spot is present is expected: spot fixes the orientation, so the offshore angle becomes a
+redundant recoding of the wind bearing. These values move in the third decimal between runs (parallel
+float reductions inside the booster are not bit-reproducible); the ranking is stable, the last digit
+is not.
 
 ### Task 4: into the serving path, or not
 

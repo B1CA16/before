@@ -62,6 +62,17 @@ class TestBuildFeatures:
         far = np.linalg.norm(at_23 - at_12)
         assert near < far
 
+    def test_wind_bearing_is_encoded_cyclically(self):
+        """359 and 1 degrees are neighbours, which the raw number does not say."""
+        pairs = make_pairs(hours=3, spots=1)
+        pairs["f_wind_direction_deg"] = [359.0, 1.0, 180.0]
+        frame = build_features(pairs)
+        points = frame[["wind_dir_sin", "wind_dir_cos"]].to_numpy()
+        near = np.linalg.norm(points[0] - points[1])
+        far = np.linalg.norm(points[0] - points[2])
+        assert near < far
+        assert np.allclose(np.hypot(points[:, 0], points[:, 1]), 1.0)
+
     def test_wind_offset_never_exceeds_180(self):
         """An angle between two bearings is at most a half turn, whichever way round you measure."""
         pairs = make_pairs(hours=4, spots=1)
