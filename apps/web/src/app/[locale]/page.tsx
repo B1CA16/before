@@ -18,7 +18,13 @@ import RankedList from "@/components/RankedList";
 import SpotDetail from "@/components/SpotDetail";
 import WaveLoader from "@/components/WaveLoader";
 import Wordmark from "@/components/Wordmark";
-import { getScores, getSpots, type ScoreNow, type SessionRow, type Spot } from "@/lib/api";
+import {
+  getScores,
+  getSpots,
+  type ScoreNow,
+  type SessionRow,
+  type Spot,
+} from "@/lib/api";
 import { useGeolocation } from "@/lib/useGeolocation";
 import { rankSpots, type SortMode } from "@/lib/rank";
 import { thinSpots } from "@/lib/thin";
@@ -61,9 +67,27 @@ function TopBar({
       <Wordmark className="h-8 w-auto flex-none" pinging={loading} />
 
       <label className="field ml-2 w-full max-w-64" aria-label={t("search")}>
-        <svg width="13" height="13" viewBox="0 0 16 16" aria-hidden className="flex-none opacity-50">
-          <circle cx="6.5" cy="6.5" r="4.5" fill="none" stroke="currentColor" strokeWidth="1.6" />
-          <path d="M10 10l4 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+        <svg
+          width="13"
+          height="13"
+          viewBox="0 0 16 16"
+          aria-hidden
+          className="flex-none opacity-50"
+        >
+          <circle
+            cx="6.5"
+            cy="6.5"
+            r="4.5"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.6"
+          />
+          <path
+            d="M10 10l4 4"
+            stroke="currentColor"
+            strokeWidth="1.6"
+            strokeLinecap="round"
+          />
         </svg>
         <input
           value={query}
@@ -75,19 +99,14 @@ function TopBar({
 
       <div className="ml-auto flex items-center gap-2">
         <span className="pill hidden md:inline-flex">{t("region")}</span>
-        <span className="pill hidden lg:inline-flex">
-          <span
-            className="h-1.5 w-1.5 rounded-full"
-            style={{ background: "var(--color-accent)" }}
-            aria-hidden
-          />
-          {t('updated')}
-        </span>
         {/* Permanent, and that is the point of it. Logging a session used to live only inside the
             spot panel, which you reach by picking a spot and scrolling: buried, for the one action
             the whole project depends on. The intro card explains it once; this keeps it reachable
             forever after the card is dismissed. */}
-        <button className="btn btn-primary hidden h-[2.125rem] min-h-0 sm:inline-flex" onClick={onLogSession}>
+        <button
+          className="btn btn-primary hidden h-[2.125rem] min-h-0 sm:inline-flex"
+          onClick={onLogSession}
+        >
           {t("logCta")}
         </button>
         <MarkCounter />
@@ -143,14 +162,15 @@ function HomeInner() {
   // without mounting a map.
   const ranked = useMemo(
     () => rankSpots(spots, scores, isFavourite, sort, geo.position),
-    [spots, scores, isFavourite, sort, geo.position]
+    [spots, scores, isFavourite, sort, geo.position],
   );
 
   const visible = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return ranked;
     return ranked.filter(
-      (s) => s.name.toLowerCase().includes(q) || s.region.toLowerCase().includes(q)
+      (s) =>
+        s.name.toLowerCase().includes(q) || s.region.toLowerCase().includes(q),
     );
   }, [ranked, query]);
 
@@ -158,12 +178,14 @@ function HomeInner() {
   // never turns into a wall of overlapping labels.
   const featured = useMemo(
     () => new Set(ranked.slice(0, 6).map((s) => s.slug)),
-    [ranked]
+    [ranked],
   );
 
   // Derived, not stored: the default selection is simply the best spot.
   const selected = picked ?? ranked[0]?.slug ?? null;
-  const selectedSpot = selected ? spots.find((s) => s.slug === selected) : undefined;
+  const selectedSpot = selected
+    ? spots.find((s) => s.slug === selected)
+    : undefined;
   const best = ranked[0];
   const bestScore = best ? (scores[best.slug]?.score ?? null) : null;
 
@@ -182,7 +204,7 @@ function HomeInner() {
         zoom,
         keep: new Set([...favourites, ...(selected ? [selected] : [])]),
       }),
-    [visible, scores, zoom, favourites, selected]
+    [visible, scores, zoom, favourites, selected],
   );
 
   function pick(slug: string) {
@@ -191,7 +213,11 @@ function HomeInner() {
     setSheetOpen(true);
     // replaceState rather than router.push: the map should not remount, and a selection is not a
     // separate history entry to press Back through. The URL still becomes copyable, which is the point.
-    window.history.replaceState(null, "", `${window.location.pathname}?spot=${slug}`);
+    window.history.replaceState(
+      null,
+      "",
+      `${window.location.pathname}?spot=${slug}`,
+    );
   }
 
   return (
@@ -218,17 +244,27 @@ function HomeInner() {
               ) : best ? (
                 <>
                   <p className="title mt-2 text-primary">
-                    {bestScore !== null && bestScore >= 5 ? t("worthGoing") : t("nothingFiring")}
+                    {bestScore !== null && bestScore >= 5
+                      ? t("worthGoing")
+                      : t("nothingFiring")}
                   </p>
                   <p className="meta mt-1.5 text-secondary">
-                    {t("leads", { name: best.name, score: scoreLabel(bestScore) })}
+                    {t("leads", {
+                      name: best.name,
+                      score: scoreLabel(bestScore),
+                    })}
                   </p>
                   <div className="mt-3">
-                    <Chip color={scoreColor(bestScore)}>{words(scoreWordKey(bestScore))}</Chip>
+                    <Chip color={scoreColor(bestScore)}>
+                      {words(scoreWordKey(bestScore))}
+                    </Chip>
                   </div>
                 </>
               ) : (
-                <WaveLoader label={t("checkingCoast")} className="mt-3 items-start" />
+                <WaveLoader
+                  label={t("checkingCoast")}
+                  className="mt-3 items-start"
+                />
               )}
             </div>
           </div>
@@ -255,7 +291,9 @@ function HomeInner() {
             >
               {geo.status === "asking" ? t("locating") : t("sortNear")}
             </button>
-            <span className="label ml-auto">{spots.length ? visible.length : ""}</span>
+            <span className="label ml-auto">
+              {spots.length ? visible.length : ""}
+            </span>
           </div>
 
           {/* Refusal is the common case, so it gets a real message rather than silence. The list is
@@ -309,7 +347,9 @@ function HomeInner() {
               {best && !failed ? (
                 <>
                   <span className="label flex-none">{t("best")}</span>
-                  <span className="truncate text-body font-semibold text-primary">{best.name}</span>
+                  <span className="truncate text-body font-semibold text-primary">
+                    {best.name}
+                  </span>
                   <span
                     className="ml-auto flex-none text-value font-extrabold tabular-nums"
                     style={{ color: scoreColor(bestScore) }}
@@ -362,7 +402,9 @@ function HomeInner() {
                       }}
                       aria-pressed={sheetTab === tab}
                       className={`cursor-pointer rounded-full px-3 py-1.5 text-micro font-bold uppercase tracking-[0.08em] transition-colors ${
-                        sheetTab === tab ? "bg-accent text-white" : "text-secondary"
+                        sheetTab === tab
+                          ? "bg-accent text-white"
+                          : "text-secondary"
                       }`}
                     >
                       {tab === "spot" ? t("thisSpot") : t("allSpots")}
@@ -385,7 +427,11 @@ function HomeInner() {
                 >
                   <span
                     className="grid h-11 w-11 flex-none place-items-center rounded-chip text-title font-extrabold tabular-nums text-badge-ink"
-                    style={{ background: scoreColor(scores[selectedSpot.slug]?.score ?? null) }}
+                    style={{
+                      background: scoreColor(
+                        scores[selectedSpot.slug]?.score ?? null,
+                      ),
+                    }}
                   >
                     {scoreLabel(scores[selectedSpot.slug]?.score ?? null)}
                   </span>
@@ -394,7 +440,13 @@ function HomeInner() {
                       {selectedSpot.name}
                     </span>
                     <span className="faint block">
-                      {t("tapForWeek", { word: words(scoreWordKey(scores[selectedSpot.slug]?.score ?? null)) })}
+                      {t("tapForWeek", {
+                        word: words(
+                          scoreWordKey(
+                            scores[selectedSpot.slug]?.score ?? null,
+                          ),
+                        ),
+                      })}
                     </span>
                   </span>
                 </button>

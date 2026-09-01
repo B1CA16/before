@@ -14,7 +14,13 @@ import { scoreColor, scoreLabel } from "@/lib/score";
  * Frame the map on the spots themselves. The detail card floats over the bottom right on wide
  * screens, so the bounds are padded on that side to keep the coastline clear of it.
  */
-function FlyToSelected({ spots, selected }: { spots: Spot[]; selected: string | null }) {
+function FlyToSelected({
+  spots,
+  selected,
+}: {
+  spots: Spot[];
+  selected: string | null;
+}) {
   const map = useMap();
   const previous = useRef<string | null>(null);
   useEffect(() => {
@@ -25,12 +31,20 @@ function FlyToSelected({ spots, selected }: { spots: Spot[]; selected: string | 
     if (wasNull || selected === null) return;
     const spot = spots.find((s) => s.slug === selected);
     if (!spot) return;
-    map.flyTo([spot.latitude, spot.longitude], Math.max(map.getZoom(), 11), { duration: 0.7 });
+    map.flyTo([spot.latitude, spot.longitude], Math.max(map.getZoom(), 11), {
+      duration: 0.7,
+    });
   }, [map, spots, selected]);
   return null;
 }
 
-function MapChrome({ spots, onZoom }: { spots: Spot[]; onZoom: (z: number) => void }) {
+function MapChrome({
+  spots,
+  onZoom,
+}: {
+  spots: Spot[];
+  onZoom: (z: number) => void;
+}) {
   const map = useMap();
 
   // Leaflet puts the attribution bottom right by default, where the detail card sits.
@@ -52,7 +66,9 @@ function MapChrome({ spots, onZoom }: { spots: Spot[]; onZoom: (z: number) => vo
 
   useEffect(() => {
     if (spots.length === 0) return;
-    const bounds = L.latLngBounds(spots.map((s) => [s.latitude, s.longitude] as [number, number]));
+    const bounds = L.latLngBounds(
+      spots.map((s) => [s.latitude, s.longitude] as [number, number]),
+    );
     const wide = map.getSize().x > 900;
     // Padded east far more than west. The spots sit on a north-south strip of coast, so fitting them
     // with even padding leaves the eastern half of the screen filled with inland Portugal that has no
@@ -78,7 +94,7 @@ function pinIcon(
   selected: boolean,
   hovered: boolean,
   favourite: boolean,
-  hidden = 0
+  hidden = 0,
 ): L.DivIcon {
   const color = scoreColor(score);
 
@@ -118,7 +134,8 @@ function pinIcon(
   // "+3" when this pin stands in for spots that were thinned out at this zoom. Without it the map
   // would quietly drop places, which is worse than a busy map: you cannot tell the difference between
   // "nothing there" and "too crowded to draw".
-  const more = hidden > 0 ? `<span class="pin-more" aria-hidden>+${hidden}</span>` : "";
+  const more =
+    hidden > 0 ? `<span class="pin-more" aria-hidden>+${hidden}</span>` : "";
   return L.divIcon({
     className: hovered ? "pin-hovered" : "",
     html: `<div style="position:relative;width:${size}px;height:${size}px;">${ping}${badge}${more}
@@ -159,12 +176,29 @@ export default function SpotMap({
   thinned: ThinnedSpot[];
 }) {
   return (
-    <MapContainer center={[38.85, -9.4]} zoom={10} zoomControl={false} className="h-full w-full">
-      {/* Voyager rather than the flat grey light basemap: it renders water with a real tint, so the
-          Atlantic does not read as dead space. CARTO tiles, OSM data. */}
+    <MapContainer
+      center={[38.85, -9.4]}
+      zoom={10}
+      zoomControl={false}
+      className="h-full w-full"
+    >
+      {/* OpenStreetMap's own tiles, and the reason is a lesson rather than a preference.
+          This used to be CARTO Voyager, which was free and unkeyed when it was chosen. CARTO has
+          since started stamping "API KEY REQUIRED" across unkeyed tiles, and the failure was
+          invisible to everything we had: the request still returns HTTP 200 with a valid PNG of
+          roughly the usual size, so no test, no build and no health check could see it. It was
+          found by looking at a screenshot. Anything served from a third party at somebody else's
+          discretion can change under you without erroring.
+
+          So the replacement is chosen for its terms, not only its looks: the OSMF tile usage
+          policy explicitly permits modest use like this with attribution, which the flat grey
+          alternatives from Esri and others do not clearly do. Grey basemaps were also tried and
+          rejected on merit: they render the Atlantic in the same grey as the land, and on a surf
+          map the coastline is the one line that has to be legible. */}
       <TileLayer
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, &copy; <a href="https://carto.com/attributions">CARTO</a>'
-        url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png"
+        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+        maxZoom={19}
       />
       <MapChrome spots={spots} onZoom={onZoom} />
       <FlyToSelected spots={spots} selected={selected} />
@@ -178,7 +212,7 @@ export default function SpotMap({
             spot.slug === selected,
             spot.slug === hovered,
             favourites.has(spot.slug),
-            hidden
+            hidden,
           )}
           zIndexOffset={spot.slug === selected ? 1000 : 0}
           eventHandlers={{

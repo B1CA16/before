@@ -60,8 +60,18 @@ export default function SpotMiniMap({
       className="h-full w-full"
       style={{ background: "var(--color-water)" }}
     >
-      <TileLayer url="https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png" />
-      <Marker position={[latitude, longitude]} icon={icon} alt={name} interactive={false} />
+      {/* Same source as the main map, deliberately. Two basemaps would be two things to notice
+          when one of them breaks, and this one broke silently once already. */}
+      <TileLayer
+        url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+        maxZoom={19}
+      />
+      <Marker
+        position={[latitude, longitude]}
+        icon={icon}
+        alt={name}
+        interactive={false}
+      />
     </MapContainer>
   );
 }
