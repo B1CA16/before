@@ -10,6 +10,7 @@ from before_surf.correction.artifact import (
     DEFAULT_PATH,
     MIN_HOUR_ROWS,
     TIMEZONE,
+    WEB_COPY_PATH,
     WindCorrection,
     fit_correction,
     load_correction,
@@ -193,3 +194,23 @@ class TestShippedArtifact:
     def test_the_committed_file_is_valid_json_with_the_documented_shape(self):
         raw = json.loads(DEFAULT_PATH.read_text(encoding="utf-8"))
         assert set(raw) == {"by_local_hour", "fallback_kmh", "metadata", "timezone"}
+
+
+class TestWebCopy:
+    """The duplicate the "how this works" page imports.
+
+    It exists because Turbopack will not resolve an import reaching outside the web app, and reading
+    the file with `fs` would work in a static build and then break the day the page revalidates from
+    a function that never traced it. A committed copy is the boring option that works everywhere,
+    and it is only safe while these tests hold.
+    """
+
+    def test_it_exists(self):
+        assert WEB_COPY_PATH.exists(), "run `python -m before_surf.correction.build`"
+
+    def test_it_is_byte_identical_to_the_artifact_the_api_loads(self):
+        """The page must never advertise numbers the API is not using."""
+        assert WEB_COPY_PATH.read_bytes() == DEFAULT_PATH.read_bytes()
+
+    def test_it_loads_as_the_same_correction(self):
+        assert load_correction(WEB_COPY_PATH) == load_correction(DEFAULT_PATH)

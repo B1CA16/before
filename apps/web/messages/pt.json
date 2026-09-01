@@ -27,6 +27,16 @@
     "previousMonth": "Mês anterior",
     "nextMonth": "Mês seguinte"
   },
+  "explain": {
+    "chartAxis": "Hora do dia (hora local)",
+    "chartCaption": "Quanto vento acrescentamos, hora a hora.",
+    "chartPeak": "O máximo é às {hour}, onde somamos {value} km/h.",
+    "chartTrough": "Quase desaparece às {hour}, com {value} km/h.",
+    "repoLink": "Ver o código no GitHub",
+    "sourceLabel": "de",
+    "weGotThisWrong": "Enganámo-nos nisto",
+    "worthKnowing": "Vale a pena saber"
+  },
   "favourites": {
     "add": "Marcar como teu",
     "added": "Spot marcado",
@@ -39,6 +49,7 @@
   },
   "footer": {
     "credits": "Previsões do Open-Meteo. Mapas do OpenStreetMap e da CARTO.",
+    "howItWorks": "Como isto funciona",
     "legal": "Legal",
     "privacy": "Privacidade",
     "terms": "Termos"

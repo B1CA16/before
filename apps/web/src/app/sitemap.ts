@@ -34,9 +34,33 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date();
 
   const staticPages: MetadataRoute.Sitemap = [
-    { ...localised("/"), lastModified: now, changeFrequency: "hourly", priority: 1 },
-    { ...localised("/privacy"), lastModified: now, changeFrequency: "yearly", priority: 0.3 },
-    { ...localised("/terms"), lastModified: now, changeFrequency: "yearly", priority: 0.3 },
+    {
+      ...localised("/"),
+      lastModified: now,
+      changeFrequency: "hourly",
+      priority: 1,
+    },
+    // Ranked above the legal pages and below the spots. It is the page that explains the product,
+    // it changes when a milestone lands rather than never, and it is the one a curious reader is
+    // plausibly searching for.
+    {
+      ...localised("/how-it-works"),
+      lastModified: now,
+      changeFrequency: "monthly",
+      priority: 0.6,
+    },
+    {
+      ...localised("/privacy"),
+      lastModified: now,
+      changeFrequency: "yearly",
+      priority: 0.3,
+    },
+    {
+      ...localised("/terms"),
+      lastModified: now,
+      changeFrequency: "yearly",
+      priority: 0.3,
+    },
   ];
 
   let spotPages: MetadataRoute.Sitemap = [];

@@ -27,6 +27,16 @@
     "previousMonth": "Previous month",
     "nextMonth": "Next month"
   },
+  "explain": {
+    "chartAxis": "Hour of the day (local time)",
+    "chartCaption": "How much wind we add, hour by hour.",
+    "chartPeak": "It peaks at {hour}, where we add {value} km/h.",
+    "chartTrough": "It nearly disappears at {hour}, at {value} km/h.",
+    "repoLink": "Read the source on GitHub",
+    "sourceLabel": "from",
+    "weGotThisWrong": "We got this wrong",
+    "worthKnowing": "Worth knowing"
+  },
   "favourites": {
     "add": "Mark as yours",
     "added": "Spot marked",
@@ -39,6 +49,7 @@
   },
   "footer": {
     "credits": "Forecasts from Open-Meteo. Maps from OpenStreetMap and CARTO.",
+    "howItWorks": "How this works",
     "legal": "Legal",
     "privacy": "Privacy",
     "terms": "Terms"

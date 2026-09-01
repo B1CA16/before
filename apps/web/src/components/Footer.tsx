@@ -21,7 +21,15 @@ export default function Footer({ bare = false }: { bare?: boolean }) {
   const t = useTranslations("footer");
 
   const links = (
-    <nav aria-label={t("legal")} className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
+    <nav
+      aria-label={t("legal")}
+      className="flex flex-wrap items-center gap-x-4 gap-y-1.5"
+    >
+      {/* First, because it is the one link here a curious visitor actually wants. The legal pages
+          are an obligation; this one is the argument for the product. */}
+      <Link href="/how-it-works" className="footer-link">
+        {t("howItWorks")}
+      </Link>
       <Link href="/privacy" className="footer-link">
         {t("privacy")}
       </Link>

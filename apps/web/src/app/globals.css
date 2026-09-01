@@ -657,6 +657,187 @@ body {
     vertical-align: top;
     border-top: 1px solid var(--color-hairline);
   }
+  /* --- "how this works" ---
+     Everything the legal pages need, plus the three things they do not: code, pulled-out notes, and
+     a chart. Reuses .legal-* for prose so the two long-form pages read identically. */
+  .explain-code {
+    margin-top: 0.9rem;
+    border: 1px solid var(--color-hairline);
+    border-radius: var(--radius-chip);
+    overflow: hidden;
+    background: var(--color-inset);
+  }
+  .explain-code-path {
+    padding: 0.45rem 0.75rem;
+    border-bottom: 1px solid var(--color-hairline);
+    font-size: var(--text-micro);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    color: var(--color-secondary);
+    word-break: break-all;
+  }
+  .explain-code pre {
+    /* Code is the one thing on this page that must not reflow: a wrapped Python line is a lie about
+       the indentation. So it scrolls inside its own box and the page never scrolls sideways. */
+    overflow-x: auto;
+    padding: 0.85rem 0.9rem;
+    font-size: var(--text-micro);
+    line-height: 1.6;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    color: var(--color-primary);
+    tab-size: 4;
+  }
+  .explain-note {
+    margin-top: 1rem;
+    padding: 0.85rem 1rem;
+    border-radius: var(--radius-chip);
+    border-left: 3px solid var(--color-accent);
+    background: var(--color-inset);
+    font-size: var(--text-meta);
+    line-height: 1.6;
+    color: var(--color-secondary);
+  }
+  /* No colour distinction between the two kinds of note, and that is the point. The first attempt
+     labelled them in #c67d1e, which is the "marginal" score colour: the palette rules in score.ts
+     reserve those four hues for scores and the violet for interface, so an editorial callout has no
+     business wearing either meaning. Amber against a violet border also simply clashed.
+     The label text does the distinguishing now, and the weight carries the small hierarchy. */
+  /* Measured, not eyeballed. --color-faint on --color-inset is 2.34:1, and 11px bold uppercase
+     needs 4.5:1 to be legible: it was unreadable rather than merely quiet. Secondary gives 6.8:1
+     and primary 16.1:1, so the hierarchy between the two kinds of note survives with both well
+     clear of the floor. */
+  .explain-note-label {
+    font-size: var(--text-label);
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--color-secondary);
+    margin-bottom: 0.3rem;
+  }
+  .explain-note.is-wrong .explain-note-label {
+    color: var(--color-primary);
+  }
+  /* Room between a chapter title and its one-line summary. They were nearly touching, which read
+     as one wrapped sentence rather than a heading and a subtitle. */
+  .explain-lede {
+    margin-top: 0.75rem;
+    margin-bottom: 1.1rem;
+    font-size: var(--text-meta);
+    line-height: 1.55;
+    color: var(--color-secondary);
+  }
+  .explain-figure {
+    margin-top: 1.2rem;
+  }
+  /* Fixed viewBox, fluid width. Nothing here can overflow its box, which the div-and-percentages
+     version did as soon as the value labels needed room. */
+  .explain-svg {
+    display: block;
+    width: 100%;
+    height: auto;
+    border: 1px solid var(--color-hairline);
+    border-radius: var(--radius-chip);
+    background: var(--color-inset);
+  }
+  .explain-bar-rect {
+    fill: var(--color-edge);
+  }
+  /* The peak and the trough are the story. Everything else is the shape between them. */
+  .explain-bar-rect.is-notable {
+    fill: var(--color-accent);
+  }
+  /* Sized for the phone, not the desktop. The whole SVG scales down to about 45% on a 390px
+     screen, so 12px type would arrive as an unreadable 5px. */
+  .explain-bar-callout {
+    fill: var(--color-accent);
+    font-size: 18px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+  .explain-axis-line {
+    stroke: var(--color-hairline);
+    stroke-width: 1;
+  }
+  .explain-axis-zero {
+    stroke: var(--color-edge);
+    stroke-width: 1.5;
+  }
+  .explain-axis-text {
+    fill: var(--color-secondary);
+    font-size: 16px;
+    font-variant-numeric: tabular-nums;
+  }
+  .explain-caption {
+    margin-top: 0.6rem;
+    font-size: var(--text-meta);
+    line-height: 1.6;
+    color: var(--color-secondary);
+  }
+  /* A numbered walkthrough. Used where prose was hiding a sequence of steps and making the reader
+     reconstruct the order themselves. */
+  .explain-steps {
+    margin-top: 1rem;
+    display: grid;
+    gap: 0.85rem;
+  }
+  .explain-steps li {
+    display: flex;
+    gap: 0.75rem;
+    align-items: flex-start;
+  }
+  .explain-step-num {
+    display: inline-grid;
+    place-items: center;
+    flex: none;
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: 999px;
+    background: var(--color-accent);
+    color: var(--color-on-accent, #fff);
+    font-size: var(--text-micro);
+    font-weight: 700;
+    line-height: 1;
+  }
+  .explain-step-title {
+    font-size: var(--text-meta);
+    font-weight: 700;
+    color: var(--color-primary);
+    line-height: 1.4;
+  }
+  .explain-step-text {
+    margin-top: 0.2rem;
+    font-size: var(--text-meta);
+    line-height: 1.6;
+    color: var(--color-secondary);
+  }
+  /* Headline figures, so the numbers that matter survive someone skimming the page. */
+  .explain-stats {
+    margin-top: 1rem;
+    display: grid;
+    gap: 0.6rem;
+    grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
+  }
+  .explain-stat {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    padding: 0.7rem 0.8rem;
+    border: 1px solid var(--color-hairline);
+    border-radius: var(--radius-chip);
+    background: var(--color-inset);
+  }
+  .explain-stat-value {
+    font-size: var(--text-value);
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    color: var(--color-accent-ink, var(--color-primary));
+    font-variant-numeric: tabular-nums;
+    line-height: 1.15;
+  }
+  .explain-stat-label {
+    font-size: var(--text-micro);
+    line-height: 1.4;
+    color: var(--color-secondary);
+  }
   .footer-link {
     font-size: var(--text-meta);
     font-weight: 600;

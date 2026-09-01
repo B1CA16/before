@@ -31,6 +31,25 @@ import pandas as pd
 
 DEFAULT_PATH = Path(__file__).resolve().parents[1] / "artifacts" / "wind_correction.json"
 
+# A second copy, inside the web app, for the "how this works" page to import.
+#
+# Duplicating a data file is not free and the alternatives were worse. The page needs these numbers
+# at build time so it cannot quietly misreport the deployed model, but Turbopack will not resolve an
+# import reaching outside the app directory, and reading it with `fs` would work during a static
+# build and then break the day the page revalidates from a serverless function that never traced the
+# file. A committed copy works identically in dev, build and ISR, on any host.
+#
+# `build.py` writes both in one go and a test asserts they are byte-identical, so the copy cannot
+# drift from the artefact the API actually loads.
+WEB_COPY_PATH = (
+    Path(__file__).resolve().parents[4]
+    / "apps"
+    / "web"
+    / "src"
+    / "content"
+    / "wind-correction.json"
+)
+
 # The bias is diurnal in local solar time. See the module docstring.
 TIMEZONE = "Europe/Lisbon"
 

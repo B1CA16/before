@@ -16,7 +16,12 @@ from pathlib import Path
 
 import pandas as pd
 
-from before_surf.correction.artifact import DEFAULT_PATH, WindCorrection, fit_correction
+from before_surf.correction.artifact import (
+    DEFAULT_PATH,
+    WEB_COPY_PATH,
+    WindCorrection,
+    fit_correction,
+)
 from before_surf.correction.dataset import build_features, load_pairs, split_by_time
 from before_surf.correction.evaluate import score
 
@@ -79,8 +84,14 @@ def build(database_url: str, path: Path | None = None) -> tuple[WindCorrection, 
         )
 
     path = path or DEFAULT_PATH
+    text = shipped.to_json() + "\n"
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(shipped.to_json() + "\n", encoding="utf-8")
+    path.write_text(text, encoding="utf-8")
+
+    # The web app's copy, written here so the two can never be updated separately. Skipped when the
+    # caller asked for a specific output path, which is what the tests do.
+    if path == DEFAULT_PATH and WEB_COPY_PATH.parent.exists():
+        WEB_COPY_PATH.write_text(text, encoding="utf-8")
     return shipped, report
 
 
